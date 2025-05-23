@@ -24,7 +24,7 @@ $nome = "João";
 $email = "joao@email.com";
 
 // Inserção
-$sql = "INSERT INTO usuario (nome, email) VALUES (?, ?)";
+$sql = "INSERT INTO tabela_nomes (nome, email) VALUES (?, ?)";
 $stmt = $mysqli->prepare($sql);
 if (!$stmt) {
     echo "Erro na preparação: " . $mysqli->error;
