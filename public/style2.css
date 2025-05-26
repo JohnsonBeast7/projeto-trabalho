@@ -24,22 +24,25 @@ body {
 header {
     background-color: #ffffff;
     color: #fff;
-    position: fixed; /* O cabeçalho fica fixo no topo da viewport */
-    top: 0;
+    position: fixed;
+    /*Ocabeçalhoficafixonotopodaviewport*/top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000; /* Garante que o cabeçalho fique sobre outros elementos */
-    display: flex;
+    z-index: 1000;
+    /*Garantequeocabeçalhofiquesobreoutroselementos*/display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 20px 0; /* Espaçamento vertical inicial */
-    transition: all 0.5s
-     ease; /* Suaviza a transição de todas as propriedades */
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    
-   
+    padding: 20px 0;
+    /*Espaçamentoverticalinicial*/transition: all 0.5s     ease;
+    /*Suavizaatransiçãodetodasaspropriedades*/box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    padding-bottom: 60px;
+    -webkit-transition: all 0.5s;
+    -moz-transition: all 0.5s;
+    -ms-transition: all 0.5s;
+    -o-transition: all 0.5s;
 }
 header h1{  
+    margin-top: 25px;
     margin-left: 250px; /* Margem inicial do título */
     font-size: 3.7em; /* Tamanho inicial da fonte do título */
     color: #604D70;

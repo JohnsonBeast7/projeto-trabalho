@@ -1,5 +1,6 @@
 <?php
-// Mostrar todos os erros
+// Mostrar todos os erros (apenas para desenvolvimento)
+// Em produção, comente ou remova as linhas abaixo e configure o PHP para logar erros.
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -13,32 +14,12 @@ $senha = "root";
 // Conexão
 $mysqli = new mysqli($hostname, $usuario, $senha, $bancodedados);
 if ($mysqli->connect_errno) {
-    echo "Falha ao conectar: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
-    exit();
-} else {
-    echo "Conectado com sucesso!<br>";
-}
-
-// Dados
-$nome = "João";
-$email = "joao@email.com";
-
-// Inserção
-$sql = "INSERT INTO tabela_nomes (nome, email) VALUES (?, ?)";
-$stmt = $mysqli->prepare($sql);
-if (!$stmt) {
-    echo "Erro na preparação: " . $mysqli->error;
+    // Para produção, esta mensagem deveria ser mais genérica e o erro logado.
+    echo "Falha ao conectar ao banco de dados: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error;
     exit();
 }
 
-$stmt->bind_param("ss", $nome, $email);
+// Opcional: Definir o charset para garantir que caracteres especiais sejam tratados corretamente
+$mysqli->set_charset("utf8mb4");
 
-if ($stmt->execute()) {
-    echo "Usuário inserido com sucesso!";
-} else {
-    echo "Erro ao inserir: " . $stmt->error;
-}
-
-$stmt->close();
-$mysqli->close();
 ?>
