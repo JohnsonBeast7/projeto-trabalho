@@ -489,6 +489,12 @@ th {
     }
     /* Para telas muito pequenas, pode ser necessário esconder mais colunas */
 }
-      
+   
+
     
+}
+
+
+.swal2-container {
+    z-index: 99999 !important; /* Um valor bem alto para sobrescrever qualquer outro */
 }

@@ -1,3 +1,6 @@
+/* Seu código @font-face e reset global * { ... } aqui (se não estiverem em style.css) */
+/* Se style.css já cuida de @font-face e *, não repita aqui. */
+
 @font-face {
     font-family: 'Maxime';
     src: url('Maxime\ Std\ Bold.otf');
@@ -5,145 +8,114 @@
     font-style: bold;
 }
 
-
 * {
     margin: 0;
     padding: 0;
-   
+    box-sizing: border-box; /* Boa prática para layout */
 }
 
 body {
-    /* A altura inicial da sua logo é 230px. O padding do header (20px top + 20px bottom)
-       adiciona mais 40px. Então, 230 + 40 = 270px.
-       Definimos um margin-top igual à altura inicial do header para que o conteúdo não fique por baixo. */
-    margin-top: 270px; /* Ajustado para a altura inicial do header + padding */
-    font-family: 'Maxime', sans-serif; /* Aplica a fonte ao corpo todo */
+    font-family: 'Maxime', sans-serif;
     background-color: rgb(240, 240, 240); /* Cor de fundo do main */
+    /* Este margin-top é específico para o dashboard, pois o header é menor aqui */
+    margin-top: 80px; /* Altura aproximada do header do dashboard (ex: 50px de altura + 15px de padding top/bottom = 80px) */
+    transition: margin-top 0.5s ease; /* Suaviza a mudança de margin-top */
 }
 
-header {
+/* Estilos para o HEADER DO DASHBOARD */
+#dashboard-header {
     background-color: #ffffff;
     color: #fff;
-    position: fixed;
-    /*Ocabeçalhoficafixonotopodaviewport*/top: 0;
+    position: fixed; /* O cabeçalho fica fixo no topo da viewport */
+    top: 0;
     left: 0;
     width: 100%;
-    z-index: 1000;
-    /*Garantequeocabeçalhofiquesobreoutroselementos*/display: flex;
+    z-index: 1000; /* Garante que o cabeçalho fique sobre outros elementos */
+    display: flex;
     align-items: center;
-    justify-content: flex-start;
-    padding: 20px 0;
-    /*Espaçamentoverticalinicial*/transition: all 0.5s     ease;
-    /*Suavizaatransiçãodetodasaspropriedades*/box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    padding-bottom: 60px;
-    -webkit-transition: all 0.5s;
-    -moz-transition: all 0.5s;
-    -ms-transition: all 0.5s;
-    -o-transition: all 0.5s;
+    justify-content: space-between; /* Alinha o h1 à esquerda e os botões à direita */
+    padding: 15px 20px; /* Espaçamento vertical e horizontal para o dashboard header */
+    transition: all 0.5s ease; /* Suaviza a transição de todas as propriedades */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-header h1{  
-    margin-top: 25px;
-    margin-left: 250px; /* Margem inicial do título */
-    font-size: 3.7em; /* Tamanho inicial da fonte do título */
-    color: #604D70;
-    text-transform: uppercase;
-    transition: all 0.5s
-     ease; /* Suaviza a transição do texto */
-    flex-shrink: 0;
+
+#dashboard-header h1 {
+    margin: 0; /* Remove margem padrão */
+    font-size: 24px; /* Tamanho ajustado para a mensagem de boas-vindas */
+    color: #604D70; /* Cor para o texto "Bem-vindo, ..." */
+    flex-grow: 1; /* Permite que o h1 ocupe o espaço disponível */
+    text-align: left; /* Alinha o texto à esquerda */
+    /* Removidas propriedades de text-transform e text-shadow que eram do index.php */
+    transition: all 0.5s ease; /* Suaviza a transição de todas as propriedades */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-   
-   
+    font-size: 1.7em;
 }
 
-header img {
-    width: 230px;
-    height: 230px;
-    
-    margin-left: 30px;
-    transition: all 0.5s
-     ease; 
+/* Estilos para o estado 'scrolled' do HEADER DO DASHBOARD */
+#dashboard-header.scrolled {
+    padding: 8px 20px; /* Reduz o padding quando scrolled */
+    background-color: #f8f8f8; /* Cor mais clara para o header scrolled */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-header.scrolled {
-    padding: 10px 0; 
-    background-color: #f8f8f8;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+#dashboard-header.scrolled h1 {
+    font-size: 20px; /* Reduz o tamanho da fonte quando scrolled */
 }
 
-header.scrolled h1 {
-    font-size: 2.4em; 
-    margin-left: 425px; 
-    flex-shrink: 0;
+/* Ajuste do margin-top do body quando o header do dashboard estiver scrolled */
+body.dashboard-scrolled { /* Você precisaria adicionar esta classe ao body via JS no dashboard */
+    margin-top: 60px; /* Ajuste para a nova altura do header scrolled */
 }
 
-header.scrolled img {
-    width: 130px; 
-    height: 130px; 
+/* Estilos para a DIV que contém os botões no HEADER do dashboard */
+.header-buttons { /* Esta classe é a mesma do index.php */
+    display: flex;
+    gap: 10px; /* Espaço entre os botões */
+    justify-content: flex-end; /* Alinha os botões à direita dentro da div */
+    align-items: center;
 }
 
-header.scrolled button {
-    display: none;
-}
-
-header.scrolled button:hover {
-    background-color: #735c86;
-    cursor: pointer;
-}
-
-
-.header-buttons {
-    margin-top: 20px;
-}
-
-#open-login-modal-btn {
-    margin-left: 260px;
-}
-
-header button {
+/* Estilo geral para os BOTÕES NO HEADER (aplicável a ambos 'Adicionar Novo Usuário' e 'Sair') */
+.header-button { /* Esta classe é a mesma do index.php */
     font-family: 'Maxime', sans-serif;
-    background-color: #604D70;
+    background-color: #604D70; /* Cor roxa (mesma do index.php) */
     border: 1px solid #604D70;
     color: white;
-    border-radius: 20px;
-    padding: 10px 30px 10px 30px;
-    margin-left: 250px;
-    margin-bottom: 10px;
-    transition: all 0.5s     ease;
-    -webkit-border-radius: 20px;
-    -moz-border-radius: 20px;
-    -ms-border-radius: 20px;
-    -o-border-radius: 20px;
-    -webkit-transition: all 0.5s     ease;
-    -moz-transition: all 0.5s     ease;
-    -ms-transition: all 0.5s     ease;
-    -o-transition: all 0.5s     ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-header button:hover {
-    background-color: #735c86;
+    border-radius: 20px; /* Borda arredondada */
+    padding: 10px 30px; /* Padding padrão dos botões */
+    transition: all 0.5s ease; /* Transição suave no hover */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Sombra */
+    text-decoration: none; /* Remove sublinhado para links */
+    display: inline-block; /* Permite padding em links */
+    text-align: center;
     cursor: pointer;
 }
 
+.header-button:hover {
+    background-color: #735c86; /* Cor roxa mais clara no hover */
+}
+
+
+/* MAIN */
 main {
     display: flex;
-    justify-content: center; 
-    align-items: flex-start; 
-    padding-top: 20px; 
-    min-height: calc(100vh - 270px);
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 20px;
+    /* min-height não precisa ser calc(100vh - X) se o body margin-top for o suficiente */
+    /*min-height: calc(100vh - 80px); /* Ajuste baseado no margin-top do body */
     background-color: rgb(240, 240, 240);
 }
 
-
+/* TABLE */
 table {
     border: 1px solid #000;
     border-collapse: collapse;
     margin: 40px 50px 50px 50px;
-    
     font-family: 'Maxime', sans-serif;
     font-weight: bold;
     font-size: 1.2em;
-    width: 90%; 
+    width: 90%;
     max-width: 1200px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
@@ -154,14 +126,12 @@ tr {
     font-family: 'Maxime', sans-serif;
     font-weight: bold;
 }
-
 tr:nth-child(2n+1) {
     background: #ffffff;
 }
 tr:nth-child(2n+2) {
     background: rgb(241, 241, 241);
 }
-
 td {
     color: #111111;
     border: 1px solid #2e2e2e;
@@ -169,7 +139,6 @@ td {
     text-align: center;
     font-family: 'Maxime', sans-serif;
     font-weight: bold;
-    
 }
 th {
     border: 1px solid #2e2e2e;
@@ -184,73 +153,71 @@ th {
     white-space: nowrap;
 }
 
+/* Estilo para linhas da tabela clicáveis */
+#user-table-body tr {
+    cursor: pointer;
+}
+
+
+/* Modais (cadastro, login, editar, adicionar) */
 .modal-overlay {
-    position: fixed; /* Fixa na viewport */
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); /* Fundo preto 70% transparente */
-    display: flex; /* Para centralizar a modal */
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 2000; /* Acima do header (z-index 1000) e de outros conteúdos */
-
-    /* Inicialmente oculto */
+    z-index: 2000;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease; /* Transição suave */
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-
 .modal-overlay.active {
     opacity: 1;
     visibility: visible;
 }
-
 .modal-content {
     background-color: #ffffff;
     padding: 30px;
     border-radius: 8px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 90%; /* Largura em relação ao overlay */
-    max-width: 500px; /* Largura máxima */
-    position: relative; /* Para posicionar o botão de fechar */
-    transform: translateY(-20px); /* Pequeno deslocamento para efeito de entrada */
-    transition: transform 0.3s ease-out; /* Transição para o efeito de entrada */
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease-out;
 }
-
 .modal-overlay.active .modal-content {
-    transform: translateY(0); /* Volta à posição original quando ativo */
+    transform: translateY(0);
 }
-
 .modal-content h2 {
     color: #604D70;
     margin-bottom: 20px;
     text-align: center;
 }
-
 .modal-content form {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Espaçamento entre os campos */
+    gap: 15px;
 }
-
 .modal-content label {
     font-weight: bold;
     color: #333;
 }
-
 .modal-content input[type="text"],
 .modal-content input[type="email"],
 .modal-content input[type="password"],
-.modal-content input[type="date"] {
+.modal-content input[type="date"],
+.modal-content select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 1em;
 }
-
 .modal-content button[type="submit"] {
     background-color: #604D70;
     color: white;
@@ -262,12 +229,9 @@ th {
     transition: background-color 0.3s ease;
     margin-top: 10px;
 }
-
 .modal-content button[type="submit"]:hover {
     background-color: #4A3A57;
 }
-
-/* Botão de Fechar da Modal */
 .close-modal-btn {
     position: absolute;
     top: 10px;
@@ -279,12 +243,9 @@ th {
     cursor: pointer;
     transition: color 0.3s ease;
 }
-
 .close-modal-btn:hover {
     color: #333;
 }
-
-/* Responsividade para a modal */
 @media (max-width: 600px) {
     .modal-content {
         width: 95%;
@@ -293,7 +254,7 @@ th {
     .modal-content h2 {
         font-size: 1.5em;
     }
-    .modal-content input, .modal-content button {
+    .modal-content input, .modal-content button, .modal-content select {
         font-size: 0.9em;
     }
     .close-modal-btn {
@@ -301,6 +262,10 @@ th {
     }
 }
 
+/* Regra para o SweetAlert2 (manter um z-index alto) */
+.swal2-container {
+    z-index: 99999 !important;
+}
 
 /* ========================================= */
 /* === MEDIA QUERIES PARA RESPONSIVIDADE === */
@@ -308,76 +273,39 @@ th {
 
 /* Para telas de até 1200px (Ex: Laptops menores) */
 @media (max-width: 1200px) {
-    header h1 {
-        margin-left: 150px; /* Reduz um pouco a margem do título */
-        font-size: 3em;
+    #dashboard-header {
+        padding: 12px 15px; /* Reduz padding */
     }
-    header button {
-        margin-left: 150px; /* Reduz a margem do botão */
+    #dashboard-header h1 {
+        font-size: 22px;
     }
-    header.scrolled h1 {
-        margin-left: 80px; /* Ajusta ainda mais para o estado scrolled */
+    .header-button {
+        padding: 8px 25px; /* Reduz padding do botão */
+        font-size: 15px;
     }
-    header.scrolled button {
-        margin-left: 50px; /* Ajusta ainda mais para o estado scrolled */
-    }
-    table {
-        margin: 30px 20px; /* Reduz as margens da tabela */
-        width: calc(100% - 40px); /* Ajusta a largura */
-        font-size: 1.1em;
+    /* Adapte o margin-top do body se o header ficou menor */
+    body {
+        margin-top: 70px;
     }
 }
 
 /* Para telas de até 992px (Ex: Tablets em modo paisagem, laptops pequenos) */
 @media (max-width: 992px) {
-    header {
-        padding: 15px 20px; /* Reduz o padding do header */
-        /* Podemos mudar o justify-content aqui para alinhar melhor */
-        justify-content: space-between; /* Logo e Título à esquerda, Botão à direita */
+    #dashboard-header {
+        padding: 10px 15px;
     }
-    header img {
-        width: 180px;
-        height: 180px;
-        margin-left: 0; /* Remove margem fixa, flexbox gerencia */
+    #dashboard-header h1 {
+        font-size: 20px;
     }
-    header h1 {
-        margin-left: 20px; /* Pequena margem para o título */
-        font-size: 2.5em;
-        text-align: left; /* Alinha o título à esquerda */
-        flex-grow: 1; /* Permite que o título ocupe o espaço */
+    .header-button {
+        padding: 7px 20px;
+        font-size: 14px;
     }
-    header button {
-        margin-left: 20px; /* Pequena margem para o botão */
-        padding: 8px 20px;
-        font-size: 0.9em;
-        margin-bottom: 0; /* Remove margem de baixo */
-    }
-
-    /* Ajustes para o estado scrolled */
-    header.scrolled {
-        padding: 8px 20px;
-    }
-    header.scrolled img {
-        width: 100px;
-        height: 100px;
-    }
-    header.scrolled h1 {
-        font-size: 1.8em;
-        margin-left: 15px;
-    }
-    header.scrolled button {
-        margin-left: 15px;
-        padding: 6px 15px;
-        font-size: 0.6em;
-    }
-
     body {
-        /* Ajusta o margin-top para a nova altura do header nestas telas */
-        margin-top: 210px; /* Altura original (180) + padding (15*2) = 210 */
+        margin-top: 60px;
     }
-
     table {
-        margin: 20px 15px; /* Reduz ainda mais as margens da tabela */
+        margin: 20px 15px; /* Reduz as margens da tabela */
         width: calc(100% - 30px);
         font-size: 1em;
     }
@@ -388,101 +316,77 @@ th {
 
 /* Para telas de até 768px (Ex: Tablets em modo retrato, smartphones maiores) */
 @media (max-width: 768px) {
-    header {
+    #dashboard-header {
         flex-wrap: wrap; /* Permite que os itens do header quebrem para a próxima linha */
         justify-content: center; /* Centraliza os itens quando quebram */
-        padding: 10px 10px;
+        padding: 8px 10px;
     }
-    header img {
-        width: 120px;
-        height: 120px;
-        margin-bottom: 10px; /* Adiciona margem inferior quando quebra linha */
-    }
-    header h1 {
-        font-size: 1.8em;
-        margin-left: 0;
-        text-align: center; /* Centraliza o título quando ele quebra */
+    #dashboard-header h1 {
+        font-size: 18px;
+        text-align: center;
         width: 100%; /* Ocupa a largura total para centralizar */
-        order: 3; /* Coloca o título após a logo e o botão */
+        margin-bottom: 10px; /* Espaço entre título e botões */
     }
-    header button {
-        margin-left: 0;
-        margin-top: 0;
-        padding: 7px 15px;
-        font-size: 0.8em;
-        order: 2; /* Coloca o botão ao lado da logo inicialmente */
-        align-self: center; /* Alinha o botão verticalmente com a logo */
+    .header-buttons {
+        width: 100%; /* Ocupa a largura total */
+        justify-content: center; /* Centraliza os botões */
+        gap: 8px;
     }
-
-    /* Ajustes para o body e o main */
+    .header-button {
+        padding: 6px 15px;
+        font-size: 13px;
+    }
     body {
-        /* Nova altura do header: logo (120) + padding (10*2) + margem_logo (10) = 150 */
-        margin-top: 150px;
-    }
-    main {
-        padding-top: 10px;
-        min-height: calc(100vh - 150px);
+        margin-top: 110px; /* Ajuste para a nova altura do header */
     }
 
     /* Ajustes para o estado scrolled */
-    header.scrolled {
-        padding: 5px 10px;
+    #dashboard-header.scrolled {
         flex-wrap: nowrap; /* Tenta manter em uma linha quando scrolled */
-        justify-content: space-between; /* Logo à esquerda, título/botão à direita */
+        justify-content: space-between;
+        padding: 5px 10px;
     }
-    header.scrolled img {
-        width: 70px;
-        height: 70px;
+    #dashboard-header.scrolled h1 {
+        font-size: 16px;
         margin-bottom: 0;
     }
-    header.scrolled h1 {
-        font-size: 1.2em;
-        margin-left: 10px;
-        text-align: left;
-        width: auto; /* Deixa o flexbox gerenciar a largura */
-        order: initial; /* Volta à ordem padrão */
-        flex-grow: 1; /* Permite que cresça */
+    #dashboard-header.scrolled .header-buttons {
+        width: auto; /* Volta ao auto */
+        justify-content: flex-end;
     }
-    header.scrolled button {
-        font-size: 0.6em;
-        padding: 5px 10px;
-        margin-left: 10px;
-        order: initial; /* Volta à ordem padrão */
+    .header-button {
+        font-size: 12px;
+        padding: 4px 10px;
+    }
+    body.dashboard-scrolled { /* Se usar JS para adicionar esta classe */
+        margin-top: 60px; /* Altura do header scrolled */
     }
 
     table {
-        margin: 15px 5px; /* Margens mínimas para a tabela */
-        width: calc(100% - 10px); /* Ocupa quase toda a largura */
+        margin: 15px 5px;
+        width: calc(100% - 10px);
         font-size: 0.8em;
     }
     th, td {
         padding: 8px 5px;
-        white-space: normal; /* Permite que o texto da célula quebre linha se necessário */
+        white-space: normal;
     }
-   
+}
 
 /* Para telas de até 480px (Ex: Smartphones) */
 @media (max-width: 480px) {
-    header img {
-        width: 100px;
-        height: 100px;
+    #dashboard-header h1 {
+        font-size: 16px;
     }
-    header h1 {
-        font-size: 1.5em;
-    }
-    header button {
-        font-size: 0.7em;
-        padding: 6px 12px;
+    .header-button {
+        font-size: 11px;
+        padding: 5px 12px;
     }
     body {
-        margin-top: 130px; /* Ajuste para a nova altura do header */
+        margin-top: 100px;
     }
-    header.scrolled img {
-        width: 60px;
-        height: 60px;
-    }
-    header.scrolled h1 {
-        font-size: 1em;
+    #dashboard-header.scrolled h1 {
+        font-size: 14px;
     }
     table {
         font-size: 0.7em;
@@ -490,8 +394,4 @@ th {
     th, td {
         padding: 6px 3px;
     }
-    /* Para telas muito pequenas, pode ser necessário esconder mais colunas */
-}
-      
-    
 }

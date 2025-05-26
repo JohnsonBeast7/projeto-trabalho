@@ -16,6 +16,7 @@ define('ACESS_KEY_FIXA', '72233720368547758072'); // <<<<<<<< MUDE ESTA CHAVE PA
 define('USUARIO_EXCECAO_LOGIN', 'superadmin'); // Exemplo: 'meu_superadmin'
 
 // Inicializa as variáveis de mensagem
+// NOTA: Com AJAX completo, essas variáveis PHP são menos usadas para exibir mensagens diretas.
 $erro_login = "";
 $cadastro_sucesso = "";
 $erro_cadastro = "";
@@ -32,7 +33,6 @@ $key_cadastro_digitada = ''; // Para o campo de cadastro
 
 
 // --- NOVO BLOCO: Lógica para retornar apenas os usuários ativos via AJAX (para atualização da tabela principal) ---
-// Este bloco será chamado pelo JavaScript para obter os dados mais recentes.
 if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
     header('Content-Type: application/json'); // Define o cabeçalho para que o navegador saiba que é JSON
 
@@ -59,17 +59,29 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
 // 3. O GRANDE BLOCO CONDICIONAL PARA REQUISIÇÕES POST (para login e cadastro via submissão normal ou AJAX)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    // Lógica de processamento do formulário de LOGIN
-    // Este bloco ainda processa submissões normais e não é afetado pela atualização AJAX da tabela de USUÁRIOS
-    if (isset($_POST['usuario']) && isset($_POST['senha']) && isset($_POST['key'])) {
+    $is_login_form_submit = isset($_POST['usuario']) && isset($_POST['senha']) && isset($_POST['key']);
+    $is_cadastro_form_submit = isset($_POST['usuario_cadastro']) && isset($_POST['senha_cadastro']) && isset($_POST['senha_confirm_cadastro']) && isset($_POST['key_cadastro']);
+
+    // Flag para identificar se a requisição é AJAX (útil para decidir o tipo de resposta)
+    $is_ajax_request = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+    if ($is_login_form_submit) {
+        // Prepara para retornar JSON se for uma requisição AJAX
+        if ($is_ajax_request) {
+            header('Content-Type: application/json');
+        }
 
         $usuario = trim($_POST['usuario']);
         $senha_digitada = $_POST['senha'];
         $key_digitada = $_POST['key'];
 
+        $response_status = 'error';
+        $response_message = '';
+        $redirect_url = '';
+
         // Validações de campos vazios
         if (empty($usuario) || empty($senha_digitada) || empty($key_digitada)) {
-            $erro_login = 'Por favor, preencha todos os campos para login.';
+            $response_message = 'Por favor, preencha todos os campos para login.';
         } else {
             // LÓGICA DE EXCEÇÃO: Verifica se o usuário é a conta que não precisa da chave
             if ($usuario === USUARIO_EXCECAO_LOGIN) {
@@ -80,14 +92,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Verifica a chave de acesso fixa primeiro, SE NECESSÁRIO
             if ($verificar_key && $key_digitada !== ACESS_KEY_FIXA) {
-                $erro_login = 'Chave de acesso incorreta.';
+                $response_message = 'Chave de acesso incorreta.';
             } else {
                 // Se a chave estiver correta (ou se for o usuário de exceção), tenta a consulta no banco
                 $sql_code = "SELECT id, usuario, senha FROM login WHERE usuario = ? LIMIT 1";
                 $stmt = $mysqli->prepare($sql_code);
 
                 if ($stmt === false) {
-                    $erro_login = "Falha interna ao preparar a consulta de login: " . $mysqli->error;
+                    $response_message = "Falha interna ao preparar a consulta de login: " . $mysqli->error;
                     error_log("Erro de prepared statement (login): " . $mysqli->error);
                 } else {
                     $stmt->bind_param("s", $usuario);
@@ -100,36 +112,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             $_SESSION['id'] = $dados_usuario['id'];
                             $_SESSION['usuario'] = $dados_usuario['usuario'];
 
-                            header("Location: dashboard.php"); // Redireciona para o dashboard em caso de sucesso
-                            exit();
+                            $response_status = 'success';
+                            $response_message = 'Login realizado com sucesso!';
+                            $redirect_url = 'dashboard.php'; // URL para redirecionar no JS
                         } else {
-                            $erro_login = 'Usuário ou senha incorretos.';
+                            $response_message = 'Usuário ou senha incorretos.';
                         }
                     } else {
-                        $erro_login = 'Usuário ou senha incorretos.';
+                        $response_message = 'Usuário ou senha incorretos.';
                     }
                     $stmt->close();
                 }
             }
         }
+
+        // Se for AJAX, sempre retorna JSON
+        if ($is_ajax_request) {
+            echo json_encode([
+                'status' => $response_status,
+                'message' => $response_message,
+                'redirect' => $redirect_url
+            ]);
+            exit();
+        } else {
+            // Fallback para submissão normal (sem JS ou erro de JS)
+            if ($response_status === 'success') {
+                header("Location: " . $redirect_url);
+                exit();
+            } else {
+                $erro_login = $response_message; // Seta a variável para o script PHP do Swal.fire
+            }
+        }
     }
-    // Lógica de processamento do formulário de CADASTRO (agora preparado para AJAX)
-    else if (isset($_POST['usuario_cadastro']) && isset($_POST['senha_cadastro']) && isset($_POST['senha_confirm_cadastro']) && isset($_POST['key_cadastro'])) {
+    // Lógica de processamento do formulário de CADASTRO (já preparado para AJAX)
+    else if ($is_cadastro_form_submit) {
 
         $usuario_cadastro = trim($_POST['usuario_cadastro']);
         $senha_cadastro = $_POST['senha_cadastro'];
         $senha_confirm_cadastro = $_POST['senha_confirm_cadastro'];
         $key_cadastro_digitada = $_POST['key_cadastro'];
 
-        // Flag para identificar se a requisição é AJAX (útil para decidir o tipo de resposta)
-        $is_ajax_request = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-
         // Prepara para retornar JSON se for uma requisição AJAX
         if ($is_ajax_request) {
             header('Content-Type: application/json');
         }
 
-        // Validações de campos
+        // Validações de campos (mesma lógica, apenas alterado para retornar JSON se $is_ajax_request)
         if (empty($usuario_cadastro) || empty($senha_cadastro) || empty($senha_confirm_cadastro) || empty($key_cadastro_digitada)) {
             $msg = "Por favor, preencha todos os campos do cadastro.";
             if ($is_ajax_request) { echo json_encode(['status' => 'error', 'message' => $msg]); exit(); } else { $erro_cadastro = $msg; }
@@ -204,7 +232,6 @@ if ($result_usuarios_initial) {
     }
 } else {
     error_log("Erro ao buscar dados iniciais da tabela_nomes: " . $mysqli->error);
-    // Não setar erro_login aqui, pois é um erro de carregamento da tabela, não de login.
 }
 ?>
 
@@ -215,6 +242,9 @@ if ($result_usuarios_initial) {
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <title>Sistema de Usuários</title>
 </head>
 <body>
@@ -237,7 +267,8 @@ if ($result_usuarios_initial) {
                     <th>Situação</th>
                 </tr>
             </thead>
-            <tbody id="user-table-body"> <?php if (!empty($dados_usuarios_initial)): ?>
+            <tbody id="user-table-body">
+                <?php if (!empty($dados_usuarios_initial)): ?>
                     <?php foreach ($dados_usuarios_initial as $usuario_item): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($usuario_item['nome']); ?></td>
@@ -261,7 +292,8 @@ if ($result_usuarios_initial) {
         <div class="modal-content">
             <button class="close-modal-btn" id="close-cadastro-modal-btn">&times;</button>
             <h2>Cadastro de Administrador</h2>
-            <form id="cadastro-form" action="" method="POST"> <label for="nome-cadastro">Usuário</label>
+            <form id="cadastro-form" action="" method="POST">
+                <label for="nome-cadastro">Usuário</label>
                 <input type="text" id="nome-cadastro" name="usuario_cadastro" autocomplete="off" maxlength="15" placeholder="Seu usuário" value="<?php echo htmlspecialchars($usuario_cadastro); ?>" required >
 
                 <label for="senha-cadastro">Senha</label>
@@ -274,14 +306,38 @@ if ($result_usuarios_initial) {
 
                 <button type="submit">Cadastrar</button>
             </form>
-            <p id="cadastro-message" style="text-align: center; margin-top: 10px;"></p>
             <?php
-            // Exibe as mensagens PHP SOMENTE se a requisição NÃO foi AJAX
+            // Exibe as mensagens PHP SOMENTE se a requisição NÃO foi AJAX (fallback)
             if (!empty($erro_cadastro) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                echo '<p style="color: red; text-align: center; margin-top: 20px;">' . htmlspecialchars($erro_cadastro) . '</p>';
+                echo '<script>
+                        Swal.fire({
+                            icon: "error",
+                            title: "Erro de Cadastro!",
+                            text: "' . htmlspecialchars($erro_cadastro) . '",
+                            confirmButtonText: "Ok"
+                        });
+                      </script>';
             }
             if (!empty($cadastro_sucesso) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                echo '<p style="color: green; text-align: center; margin-top: 20px">' . htmlspecialchars($cadastro_sucesso) . '</p>';
+                echo '<script>
+                        Swal.fire({
+                            icon: "success",
+                            title: "Sucesso!",
+                            text: "' . htmlspecialchars($cadastro_sucesso) . '",
+                            confirmButtonText: "Ok"
+                        });
+                      </script>';
+            }
+            // Para erros de login, também vamos usar SweetAlert2 como fallback (apenas para submissões não-AJAX)
+            if (!empty($erro_login) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                 echo '<script>
+                        Swal.fire({
+                            icon: "error",
+                            title: "Erro de Login!",
+                            text: "' . htmlspecialchars($erro_login) . '",
+                            confirmButtonText: "Ok"
+                        });
+                      </script>';
             }
             ?>
         </div>
@@ -290,7 +346,7 @@ if ($result_usuarios_initial) {
         <div class="modal-content">
             <button class="close-modal-btn" id="close-login-modal-btn">&times;</button>
             <h2>Login de Administrador</h2>
-            <form action="" method="POST">
+            <form id="login-form" action="" method="POST">
                 <label for="usuario-login">Usuário</label>
                 <input type="text" id="usuario-login" name="usuario" autocomplete="off" placeholder="Seu usuário" value="<?php echo htmlspecialchars($usuario); ?>" required>
 
@@ -302,13 +358,10 @@ if ($result_usuarios_initial) {
 
                 <button type="submit">Entrar</button>
             </form>
-            <?php
-            if (!empty($erro_login)) {
-                echo '<p style="color: red; text-align: center;">' . htmlspecialchars($erro_login) . '</p>';
-            }
-            ?>
-        </div>
+            </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -323,32 +376,85 @@ if ($result_usuarios_initial) {
             const loginModalOverlay = document.getElementById('login-modal-overlay');
             const closeLoginModalBtn = document.getElementById('close-login-modal-btn');
 
-            // Novos elementos para o cadastro AJAX e atualização da tabela
+            // Elementos dos formulários
             const cadastroForm = document.getElementById('cadastro-form');
-            const cadastroMessage = document.getElementById('cadastro-message');
-            const userTableBody = document.getElementById('user-table-body'); // O tbody da sua tabela principal
+            const loginForm = document.getElementById('login-form');
+            const userTableBody = document.getElementById('user-table-body');
 
-            // --- Código PHP para reabrir modais em caso de erro (ajustado para usar #cadastro-message) ---
+            // --- Código PHP para reabrir modais em caso de erro (AGORA PODE SER REMOVIDO OU SIMPLIFICADO) ---
             <?php
-            // Ajustado para usar o elemento #cadastro-message para exibir mensagens PHP também,
-            // caso o JS não tenha sido carregado ou a submissão não tenha sido AJAX.
-            // A condição !isset($_SERVER['HTTP_X_REQUESTED_WITH']) garante que isso só aconteça
-            // em uma carga de página completa, não em uma resposta AJAX.
-            if (!empty($erro_cadastro) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                echo 'cadastroModalOverlay.classList.add("active"); document.body.style.overflow = "hidden";';
-                echo 'cadastroMessage.textContent = "' . htmlspecialchars($erro_cadastro) . '";';
-                echo 'cadastroMessage.style.color = "red";';
-            } else if (!empty($cadastro_sucesso) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                echo 'cadastroModalOverlay.classList.add("active"); document.body.style.overflow = "hidden";';
-                echo 'cadastroMessage.textContent = "' . htmlspecialchars($cadastro_sucesso) . '";';
-                echo 'cadastroMessage.style.color = "green";';
-            }
-            if (!empty($erro_login)) {
+            // Este bloco PHP agora é quase redundante para AJAX, mas mantido para fallback de submissão não-AJAX.
+            // Para login, o Swal.fire será disparado pelo JS se for AJAX, ou pelo PHP se não for AJAX e houver erro.
+            if (!empty($erro_login) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 echo 'loginModalOverlay.classList.add("active"); document.body.style.overflow = "hidden";';
             }
+            // As mensagens de cadastro/sucesso agora são tratadas pelo Swal.fire no PHP ou JS.
             ?>
             // --- Fim do Código PHP para reabrir modais ---
 
+            /**
+             * Formata uma string de data e hora (YYYY-MM-DD HH:MM:SS) para DD/MM/AAAA HH:MM:SS.
+             * Esta função tenta corrigir o fuso horário assumindo que a string do MySQL
+             * representa um horário em UTC (Tempo Universal Coordenado), para que o navegador
+             * a converta corretamente para o fuso horário local do usuário.
+             *
+             * @param {string} dateTimeString A string de data e hora do MySQL.
+             * @returns {string} A data e hora formatada ou a string original se inválida.
+             */
+            function formatDateTime(dateTimeString) {
+                if (!dateTimeString) return '';
+
+                // Adiciona 'Z' ao final da string para explicitamente dizer ao JavaScript
+                // que esta data/hora está em UTC. O método `toLocaleString` então a converterá
+                // para o fuso horário local do usuário para exibição.
+                // Isso é essencial para corrigir o problema de "3 horas adiantadas".
+                const date = new Date(dateTimeString + 'Z');
+                
+                if (isNaN(date.getTime())) { // Verifica se o objeto Date é inválido
+                    console.warn('formatDateTime: Data/hora inválida detectada:', dateTimeString);
+                    return dateTimeString;
+                }
+
+                // Usa toLocaleString para formatar a data/hora no fuso horário local do navegador (pt-BR)
+                return date.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false // Formato 24h
+                });
+            }
+
+            /**
+             * Formata uma string de data (YYYY-MM-DD) para DD/MM/AAAA.
+             * Trata a data como UTC para evitar problemas de "dia anterior" em fusos horários negativos.
+             *
+             * @param {string} dateString A string de data (YYYY-MM-DD) do MySQL.
+             * @returns {string} A data formatada ou a string original se inválida.
+             */
+            function formatDate(dateString) {
+                if (!dateString) return '';
+
+                // Para strings de data (YYYY-MM-DD) sem a parte da hora, o `new Date()` pode ter
+                // um comportamento inconsistente com fusos horários.
+                // Adicionar 'T00:00:00Z' garante que a data seja interpretada como meia-noite UTC,
+                // evitando problemas de fuso horário que poderiam mover a data para o dia anterior.
+                const date = new Date(dateString + 'T00:00:00Z'); 
+                
+                if (isNaN(date.getTime())) {
+                    console.warn('formatDate: Data inválida detectada:', dateString);
+                    return dateString;
+                }
+
+                // Usa toLocaleDateString para formatar a data no fuso horário local do navegador (pt-BR)
+                return date.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            }
 
             // Header scroll effect
             window.addEventListener('scroll', function() {
@@ -363,23 +469,20 @@ if ($result_usuarios_initial) {
             openCadastroModalBtn.addEventListener('click', function() {
                 cadastroModalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
-                cadastroMessage.textContent = ''; // Limpa a mensagem ao abrir
-                cadastroForm.reset(); // Limpa o formulário ao abrir
+                cadastroForm.reset();
             });
 
             closeCadastroModalBtn.addEventListener('click', function() {
                 cadastroModalOverlay.classList.remove('active');
                 document.body.style.overflow = 'auto';
-                cadastroMessage.textContent = ''; // Limpa a mensagem ao fechar
-                cadastroForm.reset(); // Limpa o formulário ao fechar
+                cadastroForm.reset();
             });
 
             cadastroModalOverlay.addEventListener('click', function(event) {
                 if (event.target === cadastroModalOverlay) {
                     cadastroModalOverlay.classList.remove('active');
                     document.body.style.overflow = 'auto';
-                    cadastroMessage.textContent = ''; // Limpa a mensagem ao fechar
-                    cadastroForm.reset(); // Limpa o formulário ao fechar
+                    cadastroForm.reset();
                 }
             });
 
@@ -407,7 +510,6 @@ if ($result_usuarios_initial) {
                     if (cadastroModalOverlay.classList.contains('active')) {
                         cadastroModalOverlay.classList.remove('active');
                         document.body.style.overflow = 'auto';
-                        cadastroMessage.textContent = '';
                         cadastroForm.reset();
                     }
                     if (loginModalOverlay.classList.contains('active')) {
@@ -434,12 +536,18 @@ if ($result_usuarios_initial) {
                 });
             });
 
-            // --- Lógica AJAX para o formulário de Cadastro ---
+            // --- Lógica AJAX para o formulário de Cadastro (COM SWEETALERT2) ---
             cadastroForm.addEventListener('submit', function(event) {
-                event.preventDefault(); // Impede o envio padrão do formulário
+                event.preventDefault();
 
-                cadastroMessage.textContent = 'Cadastrando...'; // Feedback visual
-                cadastroMessage.style.color = 'blue';
+                Swal.fire({
+                    title: 'Processando...',
+                    text: 'Aguarde enquanto o cadastro é realizado.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
 
                 const formData = new FormData(cadastroForm);
 
@@ -447,32 +555,126 @@ if ($result_usuarios_initial) {
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest' // Indica ao PHP que é uma requisição AJAX
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
                 .then(response => {
-                    if (!response.ok) { // Checa se a resposta HTTP foi bem-sucedida (ex: 200 OK)
+                    if (!response.ok) {
                         throw new Error('Erro de rede ou no servidor: ' + response.statusText);
                     }
-                    return response.json(); // Tenta parsear a resposta como JSON
+                    return response.json();
                 })
                 .then(data => {
+                    Swal.close();
+
                     if (data.status === 'success') {
-                        cadastroMessage.textContent = data.message;
-                        cadastroMessage.style.color = 'green';
-                        cadastroForm.reset(); // Limpa o formulário após o sucesso
-                        updateUserTable(); // ATUALIZA A TABELA PRINCIPAL após o cadastro
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Sucesso!',
+                            text: data.message,
+                            confirmButtonText: 'Ok'
+                        });
+                        cadastroForm.reset();
+                        updateUserTable(); // Atualiza a tabela após o cadastro
                     } else {
-                        cadastroMessage.textContent = data.message;
-                        cadastroMessage.style.color = 'red';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: data.message,
+                            confirmButtonText: 'Ok'
+                        });
                     }
                 })
                 .catch(error => {
+                    Swal.close();
                     console.error('Erro no AJAX de cadastro:', error);
-                    cadastroMessage.textContent = 'Erro ao conectar com o servidor para cadastro. Tente novamente.';
-                    cadastroMessage.style.color = 'red';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro de Conexão!',
+                        text: 'Erro ao conectar com o servidor para cadastro. Tente novamente.',
+                        confirmButtonText: 'Ok'
+                    });
                 });
             });
+
+            // --- Lógica AJAX para o formulário de Login (TOTALMENTE AJAX COM SWEETALERT2) ---
+            loginForm.addEventListener('submit', function(event) {
+                event.preventDefault(); // Impede o envio padrão do formulário
+
+                Swal.fire({
+                    title: 'Entrando...',
+                    text: 'Verificando suas credenciais.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const formData = new FormData(loginForm);
+
+                // Variável para armazenar a promessa do fetch
+                const fetchPromise = fetch(loginForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest' // Indica ao PHP que é uma requisição AJAX
+                    }
+                });
+
+                // Variável para armazenar a promessa do tempo mínimo de exibição do SweetAlert
+                const minDisplayTimePromise = new Promise(resolve => {
+                    setTimeout(resolve, 2000); // Garante que o SweetAlert fique visível por 2 segundos
+                });
+
+                // Usa Promise.all para esperar que AMBAS as promessas (fetch e tempo mínimo) sejam resolvidas
+                Promise.all([fetchPromise, minDisplayTimePromise])
+                .then(results => {
+                    const response = results[0]; // A primeira promessa é a resposta do fetch
+
+                    // Processa a resposta do servidor
+                    if (response.headers.get('Content-Type') && response.headers.get('Content-Type').includes('application/json')) {
+                        return response.json();
+                    } else if (response.redirected) {
+                        return { status: 'redirect', url: response.url };
+                    } else {
+                        throw new Error('Resposta inesperada do servidor no login.');
+                    }
+                })
+                .then(data => {
+                    Swal.close(); // Fecha o SweetAlert de carregamento (agora garantido após 2s)
+
+                    if (data.status === 'success') {
+                        // NENHUM SWEETALERT DE SUCESSO AQUI, APENAS REDIRECIONA
+                        window.location.href = data.redirect; // Redireciona imediatamente
+                    } else if (data.status === 'redirect') {
+                        window.location.href = data.url;
+                    }
+                    else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Erro!',
+                            text: data.message,
+                            confirmButtonText: 'Ok'
+                        });
+                        loginModalOverlay.classList.add('active'); // Mantém o modal de login aberto
+                        document.body.style.overflow = 'hidden';
+                    }
+                })
+                .catch(error => {
+                    // Garante que o SweetAlert seja fechado mesmo em caso de erro
+                    Swal.close();
+                    console.error('Erro no AJAX de login:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erro de Conexão!',
+                        text: 'Erro ao conectar com o servidor. Tente novamente.',
+                        confirmButtonText: 'Ok'
+                    });
+                    loginModalOverlay.classList.add('active'); // Mantém o modal de login aberto
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+
 
             // --- Função para buscar e atualizar a tabela de usuários ativos ---
             function updateUserTable() {
@@ -488,14 +690,14 @@ if ($result_usuarios_initial) {
                             userTableBody.innerHTML = ''; // Limpa o corpo da tabela atual
 
                             if (data.data.length > 0) {
-                                // Popula a tabela com os novos dados
+                                // Popula a tabela com os novos dados formatados
                                 data.data.forEach(user => {
                                     const row = userTableBody.insertRow();
                                     row.insertCell().textContent = user.nome;
                                     row.insertCell().textContent = user.email;
-                                    row.insertCell().textContent = user.data_admissao;
-                                    row.insertCell().textContent = user.criado_em;
-                                    row.insertCell().textContent = user.atualizado_em;
+                                    row.insertCell().textContent = formatDate(user.data_admissao); // Formata data_admissao
+                                    row.insertCell().textContent = formatDateTime(user.criado_em); // Formata criado_em
+                                    row.insertCell().textContent = formatDateTime(user.atualizado_em); // Formata atualizado_em
                                     row.insertCell().textContent = user.situacao;
                                 });
                             } else {
@@ -508,12 +710,11 @@ if ($result_usuarios_initial) {
                             }
                         } else {
                             console.error('Erro ao buscar dados da tabela:', data.message || 'Status não é sucesso ou dados ausentes.');
-                            // Opcional: exibir uma mensagem de erro na interface para o usuário
                         }
                     })
                     .catch(error => {
                         console.error('Erro na requisição AJAX da tabela:', error);
-                        // Opcional: exibir uma mensagem de erro na interface para o usuário
+                        // Apenas loga no console, para não poluir a interface com alertas repetidos
                     });
             }
 
