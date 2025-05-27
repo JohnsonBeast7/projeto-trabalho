@@ -1,42 +1,37 @@
 <?php
-// 1. Início da sessão (sempre no topo e antes de qualquer saída para o navegador)
+// 1. Início da sessão 
 session_start();
 
-// 2. Inclusão da conexão com o banco de dados
-include('conexao.php'); // Certifique-se de que 'conexao.php' está configurado corretamente
+// Conexão com o banco de dados
+include('conexao.php');
 
-// Define a chave de acesso fixa aqui.
-// ATENÇÃO: Em um ambiente de produção real, essa chave NÃO DEVE estar hardcoded no código.
-// Considere usar variáveis de ambiente do servidor, um arquivo de configuração externo
-// que não seja acessível via web, ou um sistema de segredos.
-define('ACESS_KEY_FIXA', '72233720368547758072'); // <<<<<<<< MUDE ESTA CHAVE PARA A SUA CHAVE REAL E FORTE
+// Chave de acesso fixa aqui.
+define('ACESS_KEY_FIXA', '72233720368547758072'); 
 
-// Define o usuário que será a exceção no login (não precisará da KEY)
-// MUDE 'superadmin' PARA O NOME REAL DA CONTA DE ADMINISTRADOR QUE NÃO PRECISARÁ DA KEY
-define('USUARIO_EXCECAO_LOGIN', 'superadmin'); // Exemplo: 'meu_superadmin'
+// Usuario que nao precisa da chave
+define('USUARIO_EXCECAO_LOGIN', 'superadmin'); 
 
 // Inicializa as variáveis de mensagem
-// NOTA: Com AJAX completo, essas variáveis PHP são menos usadas para exibir mensagens diretas.
 $erro_login = "";
 $cadastro_sucesso = "";
 $erro_cadastro = "";
 
-// Initialize as variáveis que serão usadas nos campos de input para evitar o erro "null given"
-$usuario = ''; // Para o campo de login
-$senha_digitada = ''; // Para o campo de login (não usado diretamente no value, mas boa prática)
-$key_digitada = ''; // Para o campo de login (ainda será preenchido no formulário)
+// Variáveis de login e cadastro
+$usuario = ''; 
+$senha_digitada = ''; 
+$key_digitada = ''; 
 
-$usuario_cadastro = ''; // Para o campo de cadastro
-$senha_cadastro = ''; // Para o campo de cadastro (não usado diretamente no value)
-$senha_confirm_cadastro = ''; // Para o campo de cadastro (não usado diretamente no value)
-$key_cadastro_digitada = ''; // Para o campo de cadastro
+$usuario_cadastro = ''; 
+$senha_cadastro = '';
+$senha_confirm_cadastro = ''; 
+$key_cadastro_digitada = ''; 
 
 
-// --- Lógica para retornar apenas os usuários ativos via AJAX (para atualização da tabela principal) ---
+// Lógica para retornar apenas os usuários ativos via AJAX (Filtro)
 if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
     header('Content-Type: application/json');
 
-    // MUDANÇA AQUI: Separando search_name e search_email
+
     $search_name = $_GET['search_name'] ?? '';
     $search_email = $_GET['search_email'] ?? '';
     $filter_criado_de = $_GET['criado_de'] ?? '';
@@ -48,42 +43,33 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
     $params = [];
     $types = '';
 
-    // MUDANÇA AQUI: Filtro por Nome (separado)
+    // Filtros
     if (!empty($search_name)) {
         $sql_usuarios_ajax .= " AND nome LIKE ?";
         $params[] = '%' . $search_name . '%';
         $types .= 's';
     }
-
-    // MUDANÇA AQUI: Filtro por E-mail (separado)
     if (!empty($search_email)) {
         $sql_usuarios_ajax .= " AND email LIKE ?";
         $params[] = '%' . $search_email . '%';
         $types .= 's';
     }
-
-    // Filtro por Data de Cadastro (De)
     if (!empty($filter_criado_de)) {
         $sql_usuarios_ajax .= " AND criado_em >= ?";
         $params[] = $filter_criado_de . ' 00:00:00'; // Adiciona hora para cobrir o dia inteiro
         $types .= 's';
     }
-
-    // Filtro por Data de Cadastro (Até)
     if (!empty($filter_criado_ate)) {
         $sql_usuarios_ajax .= " AND criado_em <= ?";
         $params[] = $filter_criado_ate . ' 23:59:59'; // Adiciona hora para cobrir o dia inteiro
         $types .= 's';
     }
-
-    // Filtro por Data de Atualização (De)
+  
     if (!empty($filter_atualizado_de)) {
         $sql_usuarios_ajax .= " AND atualizado_em >= ?";
         $params[] = $filter_atualizado_de . ' 00:00:00';
         $types .= 's';
     }
-
-    // Filtro por Data de Atualização (Até)
     if (!empty($filter_atualizado_ate)) {
         $sql_usuarios_ajax .= " AND atualizado_em <= ?";
         $params[] = $filter_atualizado_ate . ' 23:59:59';
@@ -123,7 +109,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
     $stmt_ajax->close();
     exit();
 }
-// --- FIM DO BLOCO AJAX ---
+
 
 
 // 3. O GRANDE BLOCO CONDICIONAL PARA REQUISIÇÕES POST (para login e cadastro via submissão normal ou AJAX)
@@ -136,7 +122,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $is_ajax_request = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
     if ($is_login_form_submit) {
-        // Prepara para retornar JSON se for uma requisição AJAX
+       
         if ($is_ajax_request) {
             header('Content-Type: application/json');
         }
@@ -286,10 +272,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     }
-} // FIM DO if ($_SERVER["REQUEST_METHOD"] == "POST")
+} 
 
-// Consulta para buscar os dados da tabela 'tabela_nomes' para exibição inicial (quando a página carrega pela primeira vez)
-// Esta consulta NÃO é afetada pelo AJAX, ela apenas popula a tabela na carga inicial da página.
+// Consulta para buscar os dados da tabela 'tabela_nomes' para exibição inicial 
 $sql_usuarios_initial = "SELECT nome, email, data_admissao, criado_em, atualizado_em, situacao FROM tabela_nomes WHERE situacao = 'ativo' ORDER BY nome ASC";
 $result_usuarios_initial = $mysqli->query($sql_usuarios_initial);
 
@@ -378,7 +363,7 @@ if ($result_usuarios_initial) {
                 <button type="submit">Cadastrar</button>
             </form>
             <?php
-            // Exibe as mensagens PHP SOMENTE se a requisição NÃO foi AJAX (fallback)
+            // Mensagens de erro ou sucesso
             if (!empty($erro_cadastro) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 echo '<script>
                         Swal.fire({
@@ -399,7 +384,7 @@ if ($result_usuarios_initial) {
                         });
                       </script>';
             }
-            // Para erros de login, também vamos usar SweetAlert2 como fallback (apenas para submissões não-AJAX)
+           
             if (!empty($erro_login) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                  echo '<script>
                         Swal.fire({
@@ -465,6 +450,7 @@ if ($result_usuarios_initial) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <script>
+        // Checa se o DOM está pronto
         document.addEventListener('DOMContentLoaded', function() {
             const header = document.getElementById('main-header');
             const scrollThreshold = 100;
@@ -478,17 +464,17 @@ if ($result_usuarios_initial) {
             const loginModalOverlay = document.getElementById('login-modal-overlay');
             const closeLoginModalBtn = document.getElementById('close-login-modal-btn');
 
-            // Filter modal elements (maintains consistency)
+            // Filtro modal
             const openFilterModalBtn = document.getElementById('open-filter-modal-btn');
             const filterModalOverlay = document.getElementById('filter-modal-overlay');
             const closeFilterModalBtn = document.getElementById('close-filter-modal-btn');
 
-            // Form and table body elements
+            // Elementos da tabela e formulários
             const cadastroForm = document.getElementById('cadastro-form');
             const loginForm = document.getElementById('login-form');
             const userTableBody = document.getElementById('user-table-body');
 
-            // MUDANÇA AQUI: Filter inputs e buttons (agora com nome e e-mail separados)
+            // Filtro - inputs e botões
             const modalSearchNameInput = document.getElementById('modal-search-name');
             const modalSearchEmailInput = document.getElementById('modal-search-email');
             const modalFilterCriadoDeInput = document.getElementById('modal-filter-criado-de');
@@ -500,29 +486,23 @@ if ($result_usuarios_initial) {
 
 
                      /**
-             * Formats a date and time string (YYYY-MM-DD HH:MM:SS) to DD/MM/AAAA HH:MM:SS.
-             * This function attempts to correct the timezone by assuming the MySQL string
-             * represents a UTC (Coordinated Universal Time) time, so the browser
-             * converts it correctly to the user's local timezone.
-             *
-             * @param {string} dateTimeString The MySQL date and time string.
-             * @returns {string} The formatted date and time or the original string if invalid.
+             * Formata a data e hora (AAAA-MM-DD HH:MM:SS) pra DD/MM/AAAA HH:MM:SS.
+             * Mostra o fuso-horário correto do usuário
+              @param {string} dateTimeString 
+             *@returns {string} 
              */
             function formatDateTime(dateTimeString) {
                 if (!dateTimeString) return '';
 
-                // Add 'Z' to the end of the string to explicitly tell JavaScript
-                // that this date/time is in UTC. The `toLocaleString` method will then convert it
-                // to the user's local timezone for display.
-                // This is essential to correct the "3 hours ahead" problem.
+               
                 const date = new Date(dateTimeString + 'Z');
 
-                if (isNaN(date.getTime())) { // Check if the Date object is invalid
+                if (isNaN(date.getTime())) { 
                     console.warn('formatDateTime: Invalid date/time detected:', dateTimeString);
                     return dateTimeString;
                 }
 
-                // Use toLocaleString to format the date/time in the browser's local timezone (pt-BR)
+               
                 return date.toLocaleString('pt-BR', {
                     day: '2-digit',
                     month: '2-digit',
@@ -530,7 +510,7 @@ if ($result_usuarios_initial) {
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
-                    hour12: false // 24-hour format
+                    hour12: false 
                 });
             }
 
@@ -544,21 +524,20 @@ if ($result_usuarios_initial) {
             function formatDate(dateString) {
                 if (!dateString) return '';
 
-                // Check if the dateString matches the YYYY-MM-DD format
+               
                 const parts = dateString.split('-');
                 if (parts.length === 3) {
                     const year = parts[0];
                     const month = parts[1];
                     const day = parts[2];
-                    // Manually construct DD/MM/YYYY
                     return `${day}/${month}/${year}`;
                 } else {
                     console.warn('formatDate: Unexpected date format detected, returning original:', dateString);
-                    return dateString; // Return original if format is not as expected
+                    return dateString; 
                 }
             }
 
-            // Header scroll effect
+            // Efeito no header quando a página rola
             window.addEventListener('scroll', function() {
                 if (window.scrollY > scrollThreshold) {
                     header.classList.add('scrolled');
@@ -606,12 +585,10 @@ if ($result_usuarios_initial) {
                 }
             });
 
-            // --- Filter Modal ---
+            // --- Filtro Modal ---
             openFilterModalBtn.addEventListener('click', function() {
                 filterModalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
-                // Load filter values from localStorage when the modal opens
-                // MUDANÇA AQUI: Carrega os valores dos filtros de nome e e-mail separados
                 modalSearchNameInput.value = localStorage.getItem('filter_search_name') || '';
                 modalSearchEmailInput.value = localStorage.getItem('filter_search_email') || '';
                 modalFilterCriadoDeInput.value = localStorage.getItem('filter_criado_de') || '';
@@ -632,7 +609,7 @@ if ($result_usuarios_initial) {
                 }
             });
 
-            // --- General Modal Close with ESC Key ---
+            // Fechamento de modais com ESC 
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape') {
                     if (cadastroModalOverlay.classList.contains('active')) {
@@ -651,7 +628,7 @@ if ($result_usuarios_initial) {
                 }
             });
 
-            // --- KEY Input Validation (for both forms) ---
+            // Validação da KEY 
             const keyInputs = document.querySelectorAll('input[name="key"], input[name="key_cadastro"]');
             keyInputs.forEach(function(input) {
                 input.addEventListener('input', function() {
@@ -668,18 +645,10 @@ if ($result_usuarios_initial) {
                 });
             });
 
-            // --- AJAX Logic for Cadastro Form (with SweetAlert2) ---
+            // Lógica do cadastro
             cadastroForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                Swal.fire({
-                    title: 'Processando...',
-                    text: 'Aguarde enquanto o cadastro é realizado.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
 
                 const formData = new FormData(cadastroForm);
 
@@ -707,7 +676,7 @@ if ($result_usuarios_initial) {
                             confirmButtonText: 'Ok'
                         });
                         cadastroForm.reset();
-                        updateUserTable(); // Update table after successful registration
+                        updateUserTable();
                     } else {
                         Swal.fire({
                             icon: 'error',

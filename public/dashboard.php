@@ -386,14 +386,7 @@ if ($result) {
 
 
             function openEditModal(userId) {
-                Swal.fire({
-                    title: 'Carregando dados...',
-                    text: 'Aguarde.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+                
 
                 fetch(`dashboard.php?action=get_user_data&id=${userId}`)
                     .then(response => {
@@ -484,14 +477,7 @@ if ($result) {
             editUserForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                Swal.fire({
-                    title: 'Atualizando...',
-                    text: 'Salvando as alterações.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+            
 
                 const formData = new FormData(editUserForm);
                 formData.append('action', 'update_user');
@@ -531,14 +517,7 @@ if ($result) {
             addUserForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
-                Swal.fire({
-                    title: 'Adicionando Usuário...',
-                    text: 'Aguarde.',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
+               
 
                 const formData = new FormData(addUserForm);
                 formData.append('action', 'add_user');
