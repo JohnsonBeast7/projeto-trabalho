@@ -21,7 +21,7 @@ $erro_login = "";
 $cadastro_sucesso = "";
 $erro_cadastro = "";
 
-// Inicialize as variáveis que serão usadas nos campos de input para evitar o erro "null given"
+// Initialize as variáveis que serão usadas nos campos de input para evitar o erro "null given"
 $usuario = ''; // Para o campo de login
 $senha_digitada = ''; // Para o campo de login (não usado diretamente no value, mas boa prática)
 $key_digitada = ''; // Para o campo de login (ainda será preenchido no formulário)
@@ -32,15 +32,84 @@ $senha_confirm_cadastro = ''; // Para o campo de cadastro (não usado diretament
 $key_cadastro_digitada = ''; // Para o campo de cadastro
 
 
-// --- NOVO BLOCO: Lógica para retornar apenas os usuários ativos via AJAX (para atualização da tabela principal) ---
+// --- Lógica para retornar apenas os usuários ativos via AJAX (para atualização da tabela principal) ---
 if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
-    header('Content-Type: application/json'); // Define o cabeçalho para que o navegador saiba que é JSON
+    header('Content-Type: application/json');
 
-    $sql_usuarios_ajax = "SELECT nome, email, data_admissao, criado_em, atualizado_em, situacao FROM tabela_nomes WHERE situacao = 'ativo' ORDER BY nome ASC";
-    $result_usuarios_ajax = $mysqli->query($sql_usuarios_ajax);
+    // MUDANÇA AQUI: Separando search_name e search_email
+    $search_name = $_GET['search_name'] ?? '';
+    $search_email = $_GET['search_email'] ?? '';
+    $filter_criado_de = $_GET['criado_de'] ?? '';
+    $filter_criado_ate = $_GET['criado_ate'] ?? '';
+    $filter_atualizado_de = $_GET['atualizado_de'] ?? '';
+    $filter_atualizado_ate = $_GET['atualizado_ate'] ?? '';
+
+    $sql_usuarios_ajax = "SELECT nome, email, data_admissao, criado_em, atualizado_em, situacao FROM tabela_nomes WHERE situacao = 'ativo'";
+    $params = [];
+    $types = '';
+
+    // MUDANÇA AQUI: Filtro por Nome (separado)
+    if (!empty($search_name)) {
+        $sql_usuarios_ajax .= " AND nome LIKE ?";
+        $params[] = '%' . $search_name . '%';
+        $types .= 's';
+    }
+
+    // MUDANÇA AQUI: Filtro por E-mail (separado)
+    if (!empty($search_email)) {
+        $sql_usuarios_ajax .= " AND email LIKE ?";
+        $params[] = '%' . $search_email . '%';
+        $types .= 's';
+    }
+
+    // Filtro por Data de Cadastro (De)
+    if (!empty($filter_criado_de)) {
+        $sql_usuarios_ajax .= " AND criado_em >= ?";
+        $params[] = $filter_criado_de . ' 00:00:00'; // Adiciona hora para cobrir o dia inteiro
+        $types .= 's';
+    }
+
+    // Filtro por Data de Cadastro (Até)
+    if (!empty($filter_criado_ate)) {
+        $sql_usuarios_ajax .= " AND criado_em <= ?";
+        $params[] = $filter_criado_ate . ' 23:59:59'; // Adiciona hora para cobrir o dia inteiro
+        $types .= 's';
+    }
+
+    // Filtro por Data de Atualização (De)
+    if (!empty($filter_atualizado_de)) {
+        $sql_usuarios_ajax .= " AND atualizado_em >= ?";
+        $params[] = $filter_atualizado_de . ' 00:00:00';
+        $types .= 's';
+    }
+
+    // Filtro por Data de Atualização (Até)
+    if (!empty($filter_atualizado_ate)) {
+        $sql_usuarios_ajax .= " AND atualizado_em <= ?";
+        $params[] = $filter_atualizado_ate . ' 23:59:59';
+        $types .= 's';
+    }
+
+    $sql_usuarios_ajax .= " ORDER BY nome ASC";
+
+    $stmt_ajax = $mysqli->prepare($sql_usuarios_ajax);
+
+    if ($stmt_ajax === false) {
+        error_log("Erro ao preparar consulta de usuários via AJAX: " . $mysqli->error);
+        echo json_encode(['status' => 'error', 'message' => 'Erro interno ao carregar dados dos usuários via AJAX.']);
+        exit();
+    }
+
+    // Bind dos parâmetros dinamicamente
+    if (!empty($params)) {
+        $stmt_ajax->bind_param($types, ...$params);
+    }
+
+    $stmt_ajax->execute();
+    $result_usuarios_ajax = $stmt_ajax->get_result();
 
     $dados_usuarios_ajax = [];
-    if ($result_usuarios_ajax) { // Verifica se a consulta foi bem-sucedida
+    if ($result_usuarios_ajax) {
         if ($result_usuarios_ajax->num_rows > 0) {
             while ($row = $result_usuarios_ajax->fetch_assoc()) {
                 $dados_usuarios_ajax[] = $row;
@@ -51,9 +120,10 @@ if (isset($_GET['action']) && $_GET['action'] == 'get_users') {
         error_log("Erro ao buscar dados da tabela_nomes via AJAX: " . $mysqli->error);
         echo json_encode(['status' => 'error', 'message' => 'Erro ao carregar dados dos usuários via AJAX.']);
     }
-    exit(); // IMPORTANTE: Finaliza a execução do script aqui para não renderizar o HTML completo.
+    $stmt_ajax->close();
+    exit();
 }
-// --- FIM DO NOVO BLOCO ---
+// --- FIM DO BLOCO AJAX ---
 
 
 // 3. O GRANDE BLOCO CONDICIONAL PARA REQUISIÇÕES POST (para login e cadastro via submissão normal ou AJAX)
@@ -253,6 +323,7 @@ if ($result_usuarios_initial) {
         <div class="header-buttons">
             <button id="open-cadastro-modal-btn">Cadastro</button>
             <button id="open-login-modal-btn">Login</button>
+            <button id="open-filter-modal-btn">Filtrar Usuários</button>
         </div>
     </header>
     <main>
@@ -361,6 +432,36 @@ if ($result_usuarios_initial) {
             </div>
     </div>
 
+    <div class="modal-overlay" id="filter-modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" id="close-filter-modal-btn">&times;</button>
+            <h2>Filtrar Usuários</h2>
+            <div class="modal-filter-section">
+                <label for="modal-search-name">Nome:</label>
+                <input type="text" id="modal-search-name" placeholder="Buscar por nome" style="margin-bottom: 15px">
+
+                <label for="modal-search-email">E-mail:</label>
+                <input type="text" id="modal-search-email" placeholder="Buscar por e-mail" style="margin-bottom: 15px">
+
+                <label for="modal-filter-criado-de">Cadastro (De):</label>
+                <input type="date" id="modal-filter-criado-de" style="margin-bottom: 15px">
+
+                <label for="modal-filter-criado-ate">Cadastro (Até):</label>
+                <input type="date" id="modal-filter-criado-ate" style="margin-bottom: 15px">
+
+                <label for="modal-filter-atualizado-de">Atualização (De):</label>
+                <input type="date" id="modal-filter-atualizado-de" style="margin-bottom: 15px">
+
+                <label for="modal-filter-atualizado-ate">Atualização (Até):</label>
+                <input type="date" id="modal-filter-atualizado-ate" style="margin-bottom: 15px">
+
+                <div class="modal-filter-buttons">
+                    <button id="modal-apply-filters-btn">Aplicar Filtros</button>
+                    <button id="modal-clear-filters-btn">Limpar Filtros</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <script>
@@ -368,6 +469,7 @@ if ($result_usuarios_initial) {
             const header = document.getElementById('main-header');
             const scrollThreshold = 100;
 
+            // Existing modal open/close buttons and overlays
             const openCadastroModalBtn = document.getElementById('open-cadastro-modal-btn');
             const cadastroModalOverlay = document.getElementById('cadastro-modal-overlay');
             const closeCadastroModalBtn = document.getElementById('close-cadastro-modal-btn');
@@ -376,46 +478,51 @@ if ($result_usuarios_initial) {
             const loginModalOverlay = document.getElementById('login-modal-overlay');
             const closeLoginModalBtn = document.getElementById('close-login-modal-btn');
 
-            // Elementos dos formulários
+            // Filter modal elements (maintains consistency)
+            const openFilterModalBtn = document.getElementById('open-filter-modal-btn');
+            const filterModalOverlay = document.getElementById('filter-modal-overlay');
+            const closeFilterModalBtn = document.getElementById('close-filter-modal-btn');
+
+            // Form and table body elements
             const cadastroForm = document.getElementById('cadastro-form');
             const loginForm = document.getElementById('login-form');
             const userTableBody = document.getElementById('user-table-body');
 
-            // --- Código PHP para reabrir modais em caso de erro (AGORA PODE SER REMOVIDO OU SIMPLIFICADO) ---
-            <?php
-            // Este bloco PHP agora é quase redundante para AJAX, mas mantido para fallback de submissão não-AJAX.
-            // Para login, o Swal.fire será disparado pelo JS se for AJAX, ou pelo PHP se não for AJAX e houver erro.
-            if (!empty($erro_login) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                echo 'loginModalOverlay.classList.add("active"); document.body.style.overflow = "hidden";';
-            }
-            // As mensagens de cadastro/sucesso agora são tratadas pelo Swal.fire no PHP ou JS.
-            ?>
-            // --- Fim do Código PHP para reabrir modais ---
+            // MUDANÇA AQUI: Filter inputs e buttons (agora com nome e e-mail separados)
+            const modalSearchNameInput = document.getElementById('modal-search-name');
+            const modalSearchEmailInput = document.getElementById('modal-search-email');
+            const modalFilterCriadoDeInput = document.getElementById('modal-filter-criado-de');
+            const modalFilterCriadoAteInput = document.getElementById('modal-filter-criado-ate');
+            const modalFilterAtualizadoDeInput = document.getElementById('modal-filter-atualizado-de');
+            const modalFilterAtualizadoAteInput = document.getElementById('modal-filter-atualizado-ate');
+            const modalApplyFiltersBtn = document.getElementById('modal-apply-filters-btn');
+            const modalClearFiltersBtn = document.getElementById('modal-clear-filters-btn');
 
-            /**
-             * Formata uma string de data e hora (YYYY-MM-DD HH:MM:SS) para DD/MM/AAAA HH:MM:SS.
-             * Esta função tenta corrigir o fuso horário assumindo que a string do MySQL
-             * representa um horário em UTC (Tempo Universal Coordenado), para que o navegador
-             * a converta corretamente para o fuso horário local do usuário.
+
+                     /**
+             * Formats a date and time string (YYYY-MM-DD HH:MM:SS) to DD/MM/AAAA HH:MM:SS.
+             * This function attempts to correct the timezone by assuming the MySQL string
+             * represents a UTC (Coordinated Universal Time) time, so the browser
+             * converts it correctly to the user's local timezone.
              *
-             * @param {string} dateTimeString A string de data e hora do MySQL.
-             * @returns {string} A data e hora formatada ou a string original se inválida.
+             * @param {string} dateTimeString The MySQL date and time string.
+             * @returns {string} The formatted date and time or the original string if invalid.
              */
             function formatDateTime(dateTimeString) {
                 if (!dateTimeString) return '';
 
-                // Adiciona 'Z' ao final da string para explicitamente dizer ao JavaScript
-                // que esta data/hora está em UTC. O método `toLocaleString` então a converterá
-                // para o fuso horário local do usuário para exibição.
-                // Isso é essencial para corrigir o problema de "3 horas adiantadas".
+                // Add 'Z' to the end of the string to explicitly tell JavaScript
+                // that this date/time is in UTC. The `toLocaleString` method will then convert it
+                // to the user's local timezone for display.
+                // This is essential to correct the "3 hours ahead" problem.
                 const date = new Date(dateTimeString + 'Z');
-                
-                if (isNaN(date.getTime())) { // Verifica se o objeto Date é inválido
-                    console.warn('formatDateTime: Data/hora inválida detectada:', dateTimeString);
+
+                if (isNaN(date.getTime())) { // Check if the Date object is invalid
+                    console.warn('formatDateTime: Invalid date/time detected:', dateTimeString);
                     return dateTimeString;
                 }
 
-                // Usa toLocaleString para formatar a data/hora no fuso horário local do navegador (pt-BR)
+                // Use toLocaleString to format the date/time in the browser's local timezone (pt-BR)
                 return date.toLocaleString('pt-BR', {
                     day: '2-digit',
                     month: '2-digit',
@@ -423,37 +530,32 @@ if ($result_usuarios_initial) {
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
-                    hour12: false // Formato 24h
+                    hour12: false // 24-hour format
                 });
             }
 
             /**
-             * Formata uma string de data (YYYY-MM-DD) para DD/MM/AAAA.
-             * Trata a data como UTC para evitar problemas de "dia anterior" em fusos horários negativos.
+             * Formats a date string (YYYY-MM-DD) to DD/MM/AAAA manually
+             * to avoid timezone shifts for pure date strings.
              *
-             * @param {string} dateString A string de data (YYYY-MM-DD) do MySQL.
-             * @returns {string} A data formatada ou a string original se inválida.
+             * @param {string} dateString The MySQL date string (YYYY-MM-DD).
+             * @returns {string} The formatted date or the original string if invalid.
              */
             function formatDate(dateString) {
                 if (!dateString) return '';
 
-                // Para strings de data (YYYY-MM-DD) sem a parte da hora, o `new Date()` pode ter
-                // um comportamento inconsistente com fusos horários.
-                // Adicionar 'T00:00:00Z' garante que a data seja interpretada como meia-noite UTC,
-                // evitando problemas de fuso horário que poderiam mover a data para o dia anterior.
-                const date = new Date(dateString + 'T00:00:00Z'); 
-                
-                if (isNaN(date.getTime())) {
-                    console.warn('formatDate: Data inválida detectada:', dateString);
-                    return dateString;
+                // Check if the dateString matches the YYYY-MM-DD format
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const year = parts[0];
+                    const month = parts[1];
+                    const day = parts[2];
+                    // Manually construct DD/MM/YYYY
+                    return `${day}/${month}/${year}`;
+                } else {
+                    console.warn('formatDate: Unexpected date format detected, returning original:', dateString);
+                    return dateString; // Return original if format is not as expected
                 }
-
-                // Usa toLocaleDateString para formatar a data no fuso horário local do navegador (pt-BR)
-                return date.toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
             }
 
             // Header scroll effect
@@ -504,6 +606,32 @@ if ($result_usuarios_initial) {
                 }
             });
 
+            // --- Filter Modal ---
+            openFilterModalBtn.addEventListener('click', function() {
+                filterModalOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                // Load filter values from localStorage when the modal opens
+                // MUDANÇA AQUI: Carrega os valores dos filtros de nome e e-mail separados
+                modalSearchNameInput.value = localStorage.getItem('filter_search_name') || '';
+                modalSearchEmailInput.value = localStorage.getItem('filter_search_email') || '';
+                modalFilterCriadoDeInput.value = localStorage.getItem('filter_criado_de') || '';
+                modalFilterCriadoAteInput.value = localStorage.getItem('filter_criado_ate') || '';
+                modalFilterAtualizadoDeInput.value = localStorage.getItem('filter_atualizado_de') || '';
+                modalFilterAtualizadoAteInput.value = localStorage.getItem('filter_atualizado_ate') || '';
+            });
+
+            closeFilterModalBtn.addEventListener('click', function() {
+                filterModalOverlay.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+
+            filterModalOverlay.addEventListener('click', function(event) {
+                if (event.target === filterModalOverlay) {
+                    filterModalOverlay.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+
             // --- General Modal Close with ESC Key ---
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape') {
@@ -514,6 +642,10 @@ if ($result_usuarios_initial) {
                     }
                     if (loginModalOverlay.classList.contains('active')) {
                         loginModalOverlay.classList.remove('active');
+                        document.body.style.overflow = 'auto';
+                    }
+                    if (filterModalOverlay.classList.contains('active')) {
+                        filterModalOverlay.classList.remove('active');
                         document.body.style.overflow = 'auto';
                     }
                 }
@@ -536,7 +668,7 @@ if ($result_usuarios_initial) {
                 });
             });
 
-            // --- Lógica AJAX para o formulário de Cadastro (COM SWEETALERT2) ---
+            // --- AJAX Logic for Cadastro Form (with SweetAlert2) ---
             cadastroForm.addEventListener('submit', function(event) {
                 event.preventDefault();
 
@@ -575,7 +707,7 @@ if ($result_usuarios_initial) {
                             confirmButtonText: 'Ok'
                         });
                         cadastroForm.reset();
-                        updateUserTable(); // Atualiza a tabela após o cadastro
+                        updateUserTable(); // Update table after successful registration
                     } else {
                         Swal.fire({
                             icon: 'error',
@@ -592,14 +724,14 @@ if ($result_usuarios_initial) {
                         icon: 'error',
                         title: 'Erro de Conexão!',
                         text: 'Erro ao conectar com o servidor para cadastro. Tente novamente.',
-                        confirmButtonText: 'Ok'
+                        confirmButtonText: "Ok"
                     });
                 });
             });
 
-            // --- Lógica AJAX para o formulário de Login (TOTALMENTE AJAX COM SWEETALERT2) ---
+            // --- AJAX Logic for Login Form (fully AJAX with SweetAlert2) ---
             loginForm.addEventListener('submit', function(event) {
-                event.preventDefault(); // Impede o envio padrão do formulário
+                event.preventDefault(); // Prevent default form submission
 
                 Swal.fire({
                     title: 'Entrando...',
@@ -612,26 +744,23 @@ if ($result_usuarios_initial) {
 
                 const formData = new FormData(loginForm);
 
-                // Variável para armazenar a promessa do fetch
                 const fetchPromise = fetch(loginForm.action, {
                     method: 'POST',
                     body: formData,
                     headers: {
-                        'X-Requested-With': 'XMLHttpRequest' // Indica ao PHP que é uma requisição AJAX
+                        'X-Requested-With': 'XMLHttpRequest' // Indicate to PHP it's an AJAX request
                     }
                 });
 
-                // Variável para armazenar a promessa do tempo mínimo de exibição do SweetAlert
                 const minDisplayTimePromise = new Promise(resolve => {
-                    setTimeout(resolve, 2000); // Garante que o SweetAlert fique visível por 2 segundos
+                    setTimeout(resolve, 2000); // Ensure SweetAlert is visible for at least 2 seconds
                 });
 
-                // Usa Promise.all para esperar que AMBAS as promessas (fetch e tempo mínimo) sejam resolvidas
                 Promise.all([fetchPromise, minDisplayTimePromise])
                 .then(results => {
-                    const response = results[0]; // A primeira promessa é a resposta do fetch
+                    const response = results[0]; // The first promise is the fetch response
 
-                    // Processa a resposta do servidor
+                    // Process server response
                     if (response.headers.get('Content-Type') && response.headers.get('Content-Type').includes('application/json')) {
                         return response.json();
                     } else if (response.redirected) {
@@ -641,11 +770,11 @@ if ($result_usuarios_initial) {
                     }
                 })
                 .then(data => {
-                    Swal.close(); // Fecha o SweetAlert de carregamento (agora garantido após 2s)
+                    Swal.close(); // Close loading SweetAlert (now guaranteed after 2s)
 
                     if (data.status === 'success') {
-                        // NENHUM SWEETALERT DE SUCESSO AQUI, APENAS REDIRECIONA
-                        window.location.href = data.redirect; // Redireciona imediatamente
+                        // NO SUCCESS SWEETALERT HERE, JUST REDIRECT
+                        window.location.href = data.redirect; // Redirect immediately
                     } else if (data.status === 'redirect') {
                         window.location.href = data.url;
                     }
@@ -656,12 +785,12 @@ if ($result_usuarios_initial) {
                             text: data.message,
                             confirmButtonText: 'Ok'
                         });
-                        loginModalOverlay.classList.add('active'); // Mantém o modal de login aberto
+                        loginModalOverlay.classList.add('active'); // Keep login modal open
                         document.body.style.overflow = 'hidden';
                     }
                 })
                 .catch(error => {
-                    // Garante que o SweetAlert seja fechado mesmo em caso de erro
+                    // Ensure SweetAlert is closed even on error
                     Swal.close();
                     console.error('Erro no AJAX de login:', error);
                     Swal.fire({
@@ -670,15 +799,42 @@ if ($result_usuarios_initial) {
                         text: 'Erro ao conectar com o servidor. Tente novamente.',
                         confirmButtonText: 'Ok'
                     });
-                    loginModalOverlay.classList.add('active'); // Mantém o modal de login aberto
+                    loginModalOverlay.classList.add('active'); // Keep login modal open
                     document.body.style.overflow = 'hidden';
                 });
             });
 
 
-            // --- Função para buscar e atualizar a tabela de usuários ativos ---
+            // --- Function to fetch and update the active users table ---
             function updateUserTable() {
-                fetch('?action=get_users') // Faz uma requisição AJAX para o novo endpoint PHP
+                // MUDANÇA AQUI: Obtém os valores dos novos campos de filtro separados
+                const searchName = modalSearchNameInput.value;
+                const searchEmail = modalSearchEmailInput.value;
+                const criadoDe = modalFilterCriadoDeInput.value;
+                const criadoAte = modalFilterCriadoAteInput.value;
+                const atualizadoDe = modalFilterAtualizadoDeInput.value;
+                const atualizadoAte = modalFilterAtualizadoAteInput.value;
+
+                // MUDANÇA AQUI: Armazena os valores dos filtros separados no localStorage
+                localStorage.setItem('filter_search_name', searchName);
+                localStorage.setItem('filter_search_email', searchEmail);
+                localStorage.setItem('filter_criado_de', criadoDe);
+                localStorage.setItem('filter_criado_ate', criadoAte);
+                localStorage.setItem('filter_atualizado_de', atualizadoDe);
+                localStorage.setItem('filter_atualizado_ate', atualizadoAte);
+
+                let queryParams = [];
+                // MUDANÇA AQUI: Adiciona parâmetros de nome e e-mail separados
+                if (searchName) queryParams.push('search_name=' + encodeURIComponent(searchName));
+                if (searchEmail) queryParams.push('search_email=' + encodeURIComponent(searchEmail));
+                if (criadoDe) queryParams.push('criado_de=' + encodeURIComponent(criadoDe));
+                if (criadoAte) queryParams.push('criado_ate=' + encodeURIComponent(criadoAte));
+                if (atualizadoDe) queryParams.push('atualizado_de=' + encodeURIComponent(atualizadoDe));
+                if (atualizadoAte) queryParams.push('atualizado_ate=' + encodeURIComponent(atualizadoAte));
+
+                const url = '?action=get_users' + (queryParams.length > 0 ? '&' + queryParams.join('&') : '');
+
+                fetch(url)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Erro de rede ou no servidor ao buscar a tabela: ' + response.statusText);
@@ -687,26 +843,26 @@ if ($result_usuarios_initial) {
                     })
                     .then(data => {
                         if (data.status === 'success' && data.data) {
-                            userTableBody.innerHTML = ''; // Limpa o corpo da tabela atual
+                            userTableBody.innerHTML = ''; // Clear current table body
 
                             if (data.data.length > 0) {
-                                // Popula a tabela com os novos dados formatados
+                                // Populate the table with new formatted data
                                 data.data.forEach(user => {
                                     const row = userTableBody.insertRow();
                                     row.insertCell().textContent = user.nome;
                                     row.insertCell().textContent = user.email;
-                                    row.insertCell().textContent = formatDate(user.data_admissao); // Formata data_admissao
-                                    row.insertCell().textContent = formatDateTime(user.criado_em); // Formata criado_em
-                                    row.insertCell().textContent = formatDateTime(user.atualizado_em); // Formata atualizado_em
+                                    row.insertCell().textContent = formatDate(user.data_admissao); // Format data_admissao
+                                    row.insertCell().textContent = formatDateTime(user.criado_em); // Format criado_em
+                                    row.insertCell().textContent = formatDateTime(user.atualizado_em); // Format atualizado_em
                                     row.insertCell().textContent = user.situacao;
                                 });
                             } else {
-                                // Mensagem se não houver usuários ativos
+                                // Message if no active users found
                                 const row = userTableBody.insertRow();
                                 const cell = row.insertCell();
-                                cell.colSpan = 6; // Ocupa todas as colunas
+                                cell.colSpan = 6; // Span all columns
                                 cell.style.textAlign = 'center';
-                                cell.textContent = 'Nenhum usuário ativo encontrado.';
+                                cell.textContent = 'Nenhum usuário ativo encontrado com os filtros aplicados.';
                             }
                         } else {
                             console.error('Erro ao buscar dados da tabela:', data.message || 'Status não é sucesso ou dados ausentes.');
@@ -714,19 +870,56 @@ if ($result_usuarios_initial) {
                     })
                     .catch(error => {
                         console.error('Erro na requisição AJAX da tabela:', error);
-                        // Apenas loga no console, para não poluir a interface com alertas repetidos
+                        // Just log to console, to avoid cluttering the interface with repeated alerts
                     });
             }
 
-            // --- Implementação do Polling: Atualiza a tabela periodicamente ---
-            const INTERVALO_ATUALIZACAO_MS = 5000; // 5 segundos. Ajuste conforme necessário.
+            // --- Add Listeners to filter fields and buttons (INSIDE THE MODAL) ---
+            modalApplyFiltersBtn.addEventListener('click', function() {
+                updateUserTable(); // The updateUserTable function already gets modal values
+                filterModalOverlay.classList.remove('active'); // Close modal after applying filters
+                document.body.style.overflow = 'auto';
+            });
 
-            // Chama a função de atualização uma vez ao carregar a página
+            modalClearFiltersBtn.addEventListener('click', function() {
+                // MUDANÇA AQUI: Limpa os valores dos campos de nome e e-mail separados
+                modalSearchNameInput.value = '';
+                modalSearchEmailInput.value = '';
+                modalFilterCriadoDeInput.value = '';
+                modalFilterCriadoAteInput.value = '';
+                modalFilterAtualizadoDeInput.value = '';
+                modalFilterAtualizadoAteInput.value = '';
+                // MUDANÇA AQUI: Limpa os filtros no localStorage também
+                localStorage.removeItem('filter_search_name');
+                localStorage.removeItem('filter_search_email');
+                localStorage.removeItem('filter_criado_de');
+                localStorage.removeItem('filter_criado_ate');
+                localStorage.removeItem('filter_atualizado_de');
+                localStorage.removeItem('filter_atualizado_ate');
+                updateUserTable(); // Clear modal filters and update table
+                // We don't close the modal here; the user might want to apply empty filters and stay in the modal
+            });
+
+            // --- Initialization: Retrieve filters from localStorage on page load
+            // and apply them to the modal fields (and consequently to the table)
+            // MUDANÇA AQUI: Carrega os valores dos filtros de nome e e-mail separados na inicialização
+            modalSearchNameInput.value = localStorage.getItem('filter_search_name') || '';
+            modalSearchEmailInput.value = localStorage.getItem('filter_search_email') || '';
+            modalFilterCriadoDeInput.value = localStorage.getItem('filter_criado_de') || '';
+            modalFilterCriadoAteInput.value = localStorage.getItem('filter_criado_ate') || '';
+            modalFilterAtualizadoDeInput.value = localStorage.getItem('filter_atualizado_de') || '';
+            modalFilterAtualizadoAteInput.value = localStorage.getItem('filter_atualizado_ate') || '';
+
+
+            // Configure polling to continue updating the table periodically
+            const INTERVALO_ATUALIZACAO_MS = 5000; // 5 seconds. Adjust as needed.
+
+            // Call the update function once on page load
             updateUserTable();
 
-            // Configura a chamada periódica da função de atualização
+            // Configure periodic calls to the update function
             setInterval(updateUserTable, INTERVALO_ATUALIZACAO_MS);
-            // --- Fim da Implementação do Polling ---
+            // --- End of Polling Implementation ---
 
         });
     </script>

@@ -1,5 +1,11 @@
 <?php
 session_start();
+// --- MUITO IMPORTANTE: Define o fuso horário padrão do PHP ---
+// Isso garante que funções como 'date()' e objetos 'DateTime' no PHP
+// operem no fuso horário que você espera (por exemplo, o horário de Brasília).
+// Ajuste para o fuso horário correto da sua localização/servidor se não for São Paulo.
+date_default_timezone_set('America/Sao_Paulo');
+
 // Redireciona para o login se o usuário não estiver logado
 if (!isset($_SESSION['id'])) {
     header("Location: index.php");
@@ -103,7 +109,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || (isset($_GET['action']) && in_array(
         $email = trim($_POST['email']);
         $situacao = trim($_POST['situacao']);
 
-        $data_admissao = date('Y-m-d'); // Para o campo DATE
+        // A data de admissão é definida como a data atual do servidor PHP.
+        // date_default_timezone_set (no topo) garante que o fuso horário para esta função esteja correto.
+        $data_admissao = date('Y-m-d'); // Para o campo DATE no MySQL
 
         if (empty($nome) || empty($email) || empty($situacao)) {
             echo json_encode(['status' => 'error', 'message' => 'Por favor, preencha todos os campos obrigatórios (Nome, Email, Situação).']);
@@ -133,6 +141,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" || (isset($_GET['action']) && in_array(
             exit();
         }
 
+        // NOW() no MySQL usará o fuso horário configurado no próprio MySQL.
+        // Para consistência, é ideal que o fuso horário do MySQL esteja configurado para UTC ou para o mesmo do PHP.
         $sql_insert = "INSERT INTO tabela_nomes (nome, email, data_admissao, situacao, criado_em, atualizado_em) VALUES (?, ?, ?, ?, NOW(), NOW())";
         $stmt_insert = $mysqli->prepare($sql_insert);
 
@@ -217,9 +227,27 @@ if ($result) {
                         <td><?= htmlspecialchars($row['id']) ?></td>
                         <td><?= htmlspecialchars($row['nome']) ?></td>
                         <td><?= htmlspecialchars($row['email']) ?></td>
-                        <td><?= htmlspecialchars($row['data_admissao']) ?></td>
-                        <td><?= htmlspecialchars($row['criado_em']) ?></td>
-                        <td><?= htmlspecialchars($row['atualizado_em']) ?></td>
+                        <td>
+                            <?php
+                            // Cria um objeto DateTime do PHP a partir da string 'YYYY-MM-DD'
+                            // Ele usará o fuso horário padrão do PHP ('America/Sao_Paulo' neste caso).
+                            $data_admissao_obj = new DateTime($row['data_admissao']);
+                            // Formata para 'DD/MM/YYYY' para exibição.
+                            echo htmlspecialchars($data_admissao_obj->format('d/m/Y'));
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $criado_em_obj = new DateTime($row['criado_em']);
+                            echo htmlspecialchars($criado_em_obj->format('d/m/Y H:i:s'));
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $atualizado_em_obj = new DateTime($row['atualizado_em']);
+                            echo htmlspecialchars($atualizado_em_obj->format('d/m/Y H:i:s'));
+                            ?>
+                        </td>
                         <td><?= htmlspecialchars($row['situacao']) ?></td>
                     </tr>
                     <?php endforeach; ?>
@@ -297,29 +325,30 @@ if ($result) {
             const closeAddUserModalBtn = document.getElementById('close-add-user-modal-btn');
             const addUserForm = document.getElementById('add-user-form');
 
-            // Função auxiliar para formatar a data e hora
+            /**
+             * Formats a date and time string (YYYY-MM-DD HH:MM:SS) to DD/MM/AAAA HH:MM:SS.
+             * This function attempts to correct the timezone by assuming the MySQL string
+             * represents a UTC (Coordinated Universal Time) time, so the browser
+             * converts it correctly to the user's local timezone.
+             *
+             * @param {string} dateTimeString The MySQL date and time string.
+             * @returns {string} The formatted date and time or the original string if invalid.
+             */
             function formatDateTime(dateTimeString) {
                 if (!dateTimeString) return '';
 
-                // Adiciona 'Z' para indicar que a string está em UTC, para que o JavaScript
-                // a interprete corretamente antes de aplicar o fuso horário local.
-                // Se a string já vier com 'Z' ou um offset (+00:00), essa adição não será necessária.
-                // Mas, como a maioria dos DATETIME/TIMESTAMP do MySQL não vem com isso, ajuda.
-                let date = new Date(dateTimeString + (dateTimeString.includes('Z') || dateTimeString.includes('+') ? '' : 'Z'));
-                
-                // Se o fuso horário do seu banco de dados já for o seu fuso horário local,
-                // e não UTC, você pode precisar ajustar a interpretação.
-                // Uma alternativa para testar se o "Z" não resolver:
-                // let date = new Date(dateTimeString.replace(/-/g, '/') + ' GMT-0300'); // Ou o offset correto do seu servidor/DB
+                // Add 'Z' to the end of the string to explicitly tell JavaScript
+                // that this date/time is in UTC. The `toLocaleString` method will then convert it
+                // to the user's local timezone for display.
+                // This is essential to correct the "3 hours ahead" problem.
+                const date = new Date(dateTimeString + 'Z');
 
-                if (isNaN(date.getTime())) { // Verifica se a data é inválida
-                    return dateTimeString; // Retorna a string original se for inválida
+                if (isNaN(date.getTime())) { // Check if the Date object is invalid
+                    console.warn('formatDateTime: Invalid date/time detected:', dateTimeString);
+                    return dateTimeString;
                 }
 
-                // Usamos métodos getUTC... para garantir que estamos pegando os componentes UTC
-                // e então os formatamos manualmente para exibição local, evitando a conversão automática.
-                // Ou, se o date object já foi criado com o fuso horário local, podemos usar os métodos "get" normais.
-                // A abordagem mais simples é usar toLocaleString() se você quer o fuso horário do usuário.
+                // Use toLocaleString to format the date/time in the browser's local timezone (pt-BR)
                 return date.toLocaleString('pt-BR', {
                     day: '2-digit',
                     month: '2-digit',
@@ -327,27 +356,32 @@ if ($result) {
                     hour: '2-digit',
                     minute: '2-digit',
                     second: '2-digit',
-                    hour12: false // Formato 24h
+                    hour12: false // 24-hour format
                 });
             }
 
-            // Função auxiliar para formatar apenas a data (sem hora)
+            /**
+             * Formats a date string (YYYY-MM-DD) to DD/MM/AAAA manually
+             * to avoid timezone shifts for pure date strings.
+             *
+             * @param {string} dateString The MySQL date string (YYYY-MM-DD).
+             * @returns {string} The formatted date or the original string if invalid.
+             */
             function formatDate(dateString) {
                 if (!dateString) return '';
 
-                // Para datas (YYYY-MM-DD), o 'T00:00:00' e 'Z' garante interpretação como UTC à meia-noite
-                // do dia, o que é importante para evitar problemas de "dia anterior" com fuso horário.
-                let date = new Date(dateString + 'T00:00:00Z'); 
-                
-                if (isNaN(date.getTime())) {
-                    return dateString;
+                // Check if the dateString matches the YYYY-MM-DD format
+                const parts = dateString.split('-');
+                if (parts.length === 3) {
+                    const year = parts[0];
+                    const month = parts[1];
+                    const day = parts[2];
+                    // Manually construct DD/MM/YYYY
+                    return `${day}/${month}/${year}`;
+                } else {
+                    console.warn('formatDate: Unexpected date format detected, returning original:', dateString);
+                    return dateString; // Return original if format is not as expected
                 }
-
-                return date.toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
             }
 
 
@@ -553,7 +587,7 @@ if ($result) {
                     })
                     .then(data => {
                         if (data.status === 'success' && data.data) {
-                            userTableBody.innerHTML = '';
+                            userTableBody.innerHTML = ''; // Limpa o corpo da tabela atual
 
                             if (data.data.length > 0) {
                                 data.data.forEach(user => {
@@ -562,16 +596,16 @@ if ($result) {
                                     row.insertCell().textContent = user.id;
                                     row.insertCell().textContent = user.nome;
                                     row.insertCell().textContent = user.email;
+                                    // APLICA AS FUNÇÕES DE FORMATAÇÃO DO JAVASCRIPT AQUI PARA OS DADOS RECEBIDOS VIA AJAX
                                     row.insertCell().textContent = formatDate(user.data_admissao); // Usando formatDate
-                                    // Adiciona as células para data/hora formatadas na nova ordem
-                                    row.insertCell().textContent = formatDateTime(user.criado_em);
-                                    row.insertCell().textContent = formatDateTime(user.atualizado_em);
+                                    row.insertCell().textContent = formatDateTime(user.criado_em); // Usando formatDateTime
+                                    row.insertCell().textContent = formatDateTime(user.atualizado_em); // Usando formatDateTime
                                     row.insertCell().textContent = user.situacao;
                                 });
                             } else {
                                 const row = userTableBody.insertRow();
                                 const cell = row.insertCell();
-                                cell.colSpan = 7; // Ajuste o colspan para 7 colunas (ID, Nome, Email, Data Admissão, Cadastrado em, Última Atualização, Situação)
+                                cell.colSpan = 7; // Ajuste o colspan para 7 colunas
                                 cell.style.textAlign = 'center';
                                 cell.textContent = 'Nenhum nome cadastrado ainda.';
                             }
@@ -599,7 +633,7 @@ if ($result) {
 
             const INTERVALO_ATUALIZACAO_MS = 10000;
 
-            // Carrega a tabela na inicialização
+            // Carrega a tabela na inicialização (e aplica filtros se houver)
             updateUserTable();
             // E define o intervalo para atualizações periódicas
             setInterval(updateUserTable, INTERVALO_ATUALIZACAO_MS);
