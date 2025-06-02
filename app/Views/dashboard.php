@@ -1,5 +1,9 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+}
 // --- MUITO IMPORTANTE: Define o fuso horário padrão do PHP ---
 // Isso garante que funções como 'date()' e objetos 'DateTime' no PHP
 // operem no fuso horário que você espera (por exemplo, o horário de Brasília).
@@ -8,10 +12,11 @@ date_default_timezone_set('America/Sao_Paulo');
 
 // Redireciona para o login se o usuário não estiver logado
 if (!isset($_SESSION['id'])) {
-    header("Location: index.php");
+    header("Location: home");
     exit();
 }
-include('conexao.php');
+
+include __DIR__ . '/../Database/Connection.php';
 
 // --- Bloco para Requisições AJAX (POST ou GET) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" || (isset($_GET['action']) && in_array($_GET['action'], ['get_user_data', 'get_users_dashboard']))) {
@@ -184,7 +189,7 @@ if ($result) {
 <head>
     <meta charset="UTF-8">
     <title>Painel de Administração</title>
-    <link rel="stylesheet" href="style2.css">
+    <link rel="stylesheet" href="/assets/css/style2.css"">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
@@ -192,7 +197,7 @@ if ($result) {
         <h1>Bem-vindo, <?php echo htmlspecialchars($_SESSION['usuario']); ?>!</h1>
         <div class="header-buttons">
             <button type="button" class="header-button" id="open-add-user-modal-btn">Adicionar Novo Usuário</button>
-            <a href="logout.php" class="header-button">Sair</a>
+            <a href="/home" class="header-button">Sair</a>
         </div>
     </header>
 
@@ -388,7 +393,7 @@ if ($result) {
             function openEditModal(userId) {
                 
 
-                fetch(`dashboard.php?action=get_user_data&id=${userId}`)
+                fetch(`dashboard?action=get_user_data&id=${userId}`)
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Erro de rede ao buscar dados do usuário.');
@@ -482,7 +487,7 @@ if ($result) {
                 const formData = new FormData(editUserForm);
                 formData.append('action', 'update_user');
 
-                fetch('dashboard.php', {
+                fetch('dashboard', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -522,7 +527,7 @@ if ($result) {
                 const formData = new FormData(addUserForm);
                 formData.append('action', 'add_user');
 
-                fetch('dashboard.php', {
+                fetch('dashboard', {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -557,7 +562,7 @@ if ($result) {
 
             // Função para buscar e atualizar a tabela de usuários
             function updateUserTable() {
-                fetch('dashboard.php?action=get_users_dashboard')
+                fetch('dashboard?action=get_users_dashboard')
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Erro de rede ou no servidor ao buscar a tabela: ' + response.statusText);
