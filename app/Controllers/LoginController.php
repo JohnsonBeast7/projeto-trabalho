@@ -21,9 +21,9 @@ class LoginController {
         $senha = $_POST['senha'] ?? '';
         $key_digitada = $_POST['key'] ?? '';
 
-        $usuario_logado = $_SESSION['usuario'] ?? '';
+        $is_superadmin = strtolower($usuario) === 'superadmin';
 
-if ($usuario_logado !== 'superadmin' && $key_digitada !== '72233720368547758072') {
+if (!$is_superadmin && $key_digitada !== '72233720368547758072') {
     echo json_encode(['status' => 'error', 'message' => 'Chave de acesso incorreta.']);
     exit;
 }

@@ -137,26 +137,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $response_message = '';
         $redirect_url = '';
 
-        // Validações de campos vazios
-        if (empty($usuario) || empty($senha_digitada) || empty($key_digitada)) {
+        
+
+        // Verificação se o usuário é superadmin (sem case sensitive)
+        $is_superadmin = strtolower($usuario) === strtolower(USUARIO_EXCECAO_LOGIN);
+
+        // Validação de campos obrigatórios
+        if (empty($usuario) || empty($senha_digitada) || (!$is_superadmin && empty($key_digitada))) {
             $response_message = 'Por favor, preencha todos os campos para login.';
         } else {
-            // LÓGICA DE EXCEÇÃO: Verifica se o usuário é a conta que não precisa da chave
-            if ($usuario === USUARIO_EXCECAO_LOGIN) {
-                // Não exige chave
+            // Validação da chave apenas para usuários normais
+            if ($is_superadmin) {
                 $key_validada = true;
             } else {
                 $key_validada = $key_digitada === ACESS_KEY_FIXA;
             }
-            
-            if (!$key_validada) {
+        
+            if (!$key_validada && !$is_superadmin) {
                 $response_message = 'Chave de acesso incorreta.';
-            }
-             else {
-                // Se a chave estiver correta (ou se for o usuário de exceção), tenta a consulta no banco
+            } elseif ($key_validada || $is_superadmin) {
                 $sql_code = "SELECT id, usuario, senha FROM login WHERE usuario = ? LIMIT 1";
                 $stmt = $mysqli->prepare($sql_code);
-
+        
                 if ($stmt === false) {
                     $response_message = "Falha interna ao preparar a consulta de login: " . $mysqli->error;
                     error_log("Erro de prepared statement (login): " . $mysqli->error);
@@ -164,16 +166,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $stmt->bind_param("s", $usuario);
                     $stmt->execute();
                     $result = $stmt->get_result();
-
+        
                     if ($result->num_rows == 1) {
                         $dados_usuario = $result->fetch_assoc();
                         if (password_verify($senha_digitada, $dados_usuario['senha'])) {
                             $_SESSION['id'] = $dados_usuario['id'];
                             $_SESSION['usuario'] = $dados_usuario['usuario'];
-
+        
                             $response_status = 'success';
                             $response_message = 'Login realizado com sucesso!';
-                            $redirect_url = 'dashboard'; // URL para redirecionar no JS
+                            $redirect_url = 'dashboard';
                         } else {
                             $response_message = 'Usuário ou senha incorretos.';
                         }
@@ -184,6 +186,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
         }
+        
+
 
         // Se for AJAX, sempre retorna JSON
         if ($is_ajax_request) {
@@ -353,7 +357,7 @@ if ($result_usuarios_initial) {
             <h2>Cadastro de Administrador</h2>
             <form id="cadastro-form" action="/cadastrar" method="POST">
                     <label for="usuario_cadastro">Usuário</label>
-                    <input type="text" id="usuario_cadastro" name="usuario_cadastro" placeholder="Nome de usuário" required>
+                    <input type="text" id="usuario_cadastro" name="usuario_cadastro" placeholder="Nome de usuário" maxlength="12" required>
 
                     <label for="senha_cadastro">Senha</label>
                     <input type="password" id="senha_cadastro" name="senha_cadastro" placeholder="Senha" minlength="8" required>
@@ -361,8 +365,8 @@ if ($result_usuarios_initial) {
                     <label for="senha_confirm_cadastro">Confirmar Senha</label>
                     <input type="password" id="senha_confirm_cadastro" name="senha_confirm_cadastro" placeholder="Repita a senha" minlength="8" required>
 
-                    <label for="key_cadastro">Chave de Acesso</label>
-                    <input type="text" id="key_cadastro" name="key_cadastro" placeholder="Chave de acesso" required>
+                    <label for="key_cadastro">KEY</label>
+                    <input type="text" id="key_cadastro" name="key_cadastro" placeholder="Chave de acesso" maxlength="20" required>
 
                     <button type="submit">Cadastrar</button>
                 </form>
@@ -408,7 +412,7 @@ if ($result_usuarios_initial) {
             <h2>Login de Administrador</h2>
             <form id="login-form" action="/login" method="POST">
                 <label for="usuario-login">Usuário</label>
-                <input type="text" id="usuario-login" name="usuario" autocomplete="off" placeholder="Seu usuário" value="<?php echo htmlspecialchars($usuario); ?>" required>
+                <input type="text" id="usuario-login" name="usuario" maxlength="12" autocomplete="off" placeholder="Seu usuário" value="<?php echo htmlspecialchars($usuario); ?>" required>
 
                 <label for="senha-login">Senha</label>
                 <input type="password" id="senha-login" name="senha" autocomplete="off" placeholder="Sua senha" required>
@@ -487,6 +491,160 @@ if ($result_usuarios_initial) {
             const modalFilterAtualizadoAteInput = document.getElementById('modal-filter-atualizado-ate');
             const modalApplyFiltersBtn = document.getElementById('modal-apply-filters-btn');
             const modalClearFiltersBtn = document.getElementById('modal-clear-filters-btn');
+
+            // Atualiza o sessionStorage em tempo real durante a digitação ou seleção
+            [modalSearchNameInput, modalSearchEmailInput, modalFilterCriadoDeInput, modalFilterCriadoAteInput, modalFilterAtualizadoDeInput, modalFilterAtualizadoAteInput].forEach(input => {
+                input.addEventListener('input', function () {
+                    const key = {
+                        [modalSearchNameInput.id]: 'filter_search_name',
+                        [modalSearchEmailInput.id]: 'filter_search_email',
+                        [modalFilterCriadoDeInput.id]: 'filter_criado_de',
+                        [modalFilterCriadoAteInput.id]: 'filter_criado_ate',
+                        [modalFilterAtualizadoDeInput.id]: 'filter_atualizado_de',
+                        [modalFilterAtualizadoAteInput.id]: 'filter_atualizado_ate',
+                    }[input.id];
+
+                    if (key) {
+                        sessionStorage.setItem(key, input.value);
+                    }
+           document.addEventListener('DOMContentLoaded', function () {
+    // Inputs do filtro
+    const modalSearchNameInput = document.getElementById('modal-search-name');
+    const modalSearchEmailInput = document.getElementById('modal-search-email');
+    const modalFilterCriadoDeInput = document.getElementById('modal-filter-criado-de');
+    const modalFilterCriadoAteInput = document.getElementById('modal-filter-criado-ate');
+    const modalFilterAtualizadoDeInput = document.getElementById('modal-filter-atualizado-de');
+    const modalFilterAtualizadoAteInput = document.getElementById('modal-filter-atualizado-ate');
+
+    function sincronizarCamposFiltroComsessionStorage() {
+        modalSearchNameInput.value = sessionStorage.getItem('filter_search_name') || '';
+        modalSearchEmailInput.value = sessionStorage.getItem('filter_search_email') || '';
+        modalFilterCriadoDeInput.value = sessionStorage.getItem('filter_criado_de') || '';
+        modalFilterCriadoAteInput.value = sessionStorage.getItem('filter_criado_ate') || '';
+        modalFilterAtualizadoDeInput.value = sessionStorage.getItem('filter_atualizado_de') || '';
+        modalFilterAtualizadoAteInput.value = sessionStorage.getItem('filter_atualizado_ate') || '';
+    }
+
+    sincronizarCamposFiltroComsessionStorage();
+    setInterval(sincronizarCamposFiltroComsessionStorage, 3000);
+
+    function updateUserTable() {
+        const searchName = modalSearchNameInput.value;
+        const searchEmail = modalSearchEmailInput.value;
+        const criadoDe = modalFilterCriadoDeInput.value;
+        const criadoAte = modalFilterCriadoAteInput.value;
+        const atualizadoDe = modalFilterAtualizadoDeInput.value;
+        const atualizadoAte = modalFilterAtualizadoAteInput.value;
+
+        sessionStorage.setItem('filter_search_name', searchName);
+        sessionStorage.setItem('filter_search_email', searchEmail);
+        sessionStorage.setItem('filter_criado_de', criadoDe);
+        sessionStorage.setItem('filter_criado_ate', criadoAte);
+        sessionStorage.setItem('filter_atualizado_de', atualizadoDe);
+        sessionStorage.setItem('filter_atualizado_ate', atualizadoAte);
+
+        const params = new URLSearchParams();
+        if (searchName) params.append('search_name', searchName);
+        if (searchEmail) params.append('search_email', searchEmail);
+        if (criadoDe) params.append('criado_de', criadoDe);
+        if (criadoAte) params.append('criado_ate', criadoAte);
+        if (atualizadoDe) params.append('atualizado_de', atualizadoDe);
+        if (atualizadoAte) params.append('atualizado_ate', atualizadoAte);
+
+        fetch('?action=get_users&' + params.toString())
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('user-table-body');
+                tbody.innerHTML = '';
+                if (data.status === 'success') {
+                    if (data.data.length === 0) {
+                        const row = tbody.insertRow();
+                        const cell = row.insertCell();
+                        cell.colSpan = 6;
+                        cell.style.textAlign = 'center';
+                        cell.textContent = 'Nenhum usuário ativo encontrado.';
+                    } else {
+                        data.data.forEach(user => {
+                            const row = tbody.insertRow();
+                            row.insertCell().textContent = user.nome;
+                            row.insertCell().textContent = user.email;
+                            row.insertCell().textContent = user.data_admissao;
+                            row.insertCell().textContent = user.criado_em;
+                            row.insertCell().textContent = user.atualizado_em;
+                            row.insertCell().textContent = user.situacao;
+                        });
+                    }
+                }
+            })
+            .catch(err => console.error('Erro ao buscar usuários:', err));
+    }
+
+    [
+        modalSearchNameInput,
+        modalSearchEmailInput,
+        modalFilterCriadoDeInput,
+        modalFilterCriadoAteInput,
+        modalFilterAtualizadoDeInput,
+        modalFilterAtualizadoAteInput
+    ].forEach(input => {
+        input.addEventListener('input', () => {
+            const keyMap = {
+                [modalSearchNameInput.id]: 'filter_search_name',
+                [modalSearchEmailInput.id]: 'filter_search_email',
+                [modalFilterCriadoDeInput.id]: 'filter_criado_de',
+                [modalFilterCriadoAteInput.id]: 'filter_criado_ate',
+                [modalFilterAtualizadoDeInput.id]: 'filter_atualizado_de',
+                [modalFilterAtualizadoAteInput.id]: 'filter_atualizado_ate',
+            };
+            const key = keyMap[input.id];
+            if (key) {
+                sessionStorage.setItem(key, input.value);
+            }
+            updateUserTable();
+        });
+    });
+
+    document.getElementById('modal-apply-filters-btn').addEventListener('click', () => {
+        updateUserTable();
+        document.getElementById('filter-modal-overlay').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    });
+
+    document.getElementById('modal-clear-filters-btn').addEventListener('click', () => {
+        [
+            'filter_search_name',
+            'filter_search_email',
+            'filter_criado_de',
+            'filter_criado_ate',
+            'filter_atualizado_de',
+            'filter_atualizado_ate'
+        ].forEach(key => sessionStorage.removeItem(key));
+        sincronizarCamposFiltroComsessionStorage();
+        updateUserTable();
+    });
+
+    updateUserTable();
+});
+        
+                    updateUserTable(); // continua aplicando o filtro automaticamente
+                });
+            });
+
+            const usuarioLoginInput = document.getElementById('usuario-login');
+            const keyLoginInput = document.getElementById('key-login');
+
+            
+            // Remover "required" do campo key se o usuário for superadmin
+            usuarioLoginInput.addEventListener('input', function () {
+                const usuarioVal = usuarioLoginInput.value.trim().toLowerCase();
+                if (usuarioVal === 'superadmin') {
+                    keyLoginInput.required = false;
+           
+                } else {
+                    keyLoginInput.required = true;
+  
+                }
+            });
 
 
                      /**
@@ -591,15 +749,10 @@ if ($result_usuarios_initial) {
 
             // --- Filtro Modal ---
             openFilterModalBtn.addEventListener('click', function() {
-                filterModalOverlay.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                modalSearchNameInput.value = localStorage.getItem('filter_search_name') || '';
-                modalSearchEmailInput.value = localStorage.getItem('filter_search_email') || '';
-                modalFilterCriadoDeInput.value = localStorage.getItem('filter_criado_de') || '';
-                modalFilterCriadoAteInput.value = localStorage.getItem('filter_criado_ate') || '';
-                modalFilterAtualizadoDeInput.value = localStorage.getItem('filter_atualizado_de') || '';
-                modalFilterAtualizadoAteInput.value = localStorage.getItem('filter_atualizado_ate') || '';
+            filterModalOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
             });
+
 
             closeFilterModalBtn.addEventListener('click', function() {
                 filterModalOverlay.classList.remove('active');
@@ -788,13 +941,13 @@ if ($result_usuarios_initial) {
                 const atualizadoDe = modalFilterAtualizadoDeInput.value;
                 const atualizadoAte = modalFilterAtualizadoAteInput.value;
 
-                // MUDANÇA AQUI: Armazena os valores dos filtros separados no localStorage
-                localStorage.setItem('filter_search_name', searchName);
-                localStorage.setItem('filter_search_email', searchEmail);
-                localStorage.setItem('filter_criado_de', criadoDe);
-                localStorage.setItem('filter_criado_ate', criadoAte);
-                localStorage.setItem('filter_atualizado_de', atualizadoDe);
-                localStorage.setItem('filter_atualizado_ate', atualizadoAte);
+                // MUDANÇA AQUI: Armazena os valores dos filtros separados no sessionStorage
+                sessionStorage.setItem('filter_search_name', searchName);
+                sessionStorage.setItem('filter_search_email', searchEmail);
+                sessionStorage.setItem('filter_criado_de', criadoDe);
+                sessionStorage.setItem('filter_criado_ate', criadoAte);
+                sessionStorage.setItem('filter_atualizado_de', atualizadoDe);
+                sessionStorage.setItem('filter_atualizado_ate', atualizadoAte);
 
                 let queryParams = [];
                 // MUDANÇA AQUI: Adiciona parâmetros de nome e e-mail separados
@@ -862,26 +1015,26 @@ if ($result_usuarios_initial) {
                 modalFilterCriadoAteInput.value = '';
                 modalFilterAtualizadoDeInput.value = '';
                 modalFilterAtualizadoAteInput.value = '';
-                // MUDANÇA AQUI: Limpa os filtros no localStorage também
-                localStorage.removeItem('filter_search_name');
-                localStorage.removeItem('filter_search_email');
-                localStorage.removeItem('filter_criado_de');
-                localStorage.removeItem('filter_criado_ate');
-                localStorage.removeItem('filter_atualizado_de');
-                localStorage.removeItem('filter_atualizado_ate');
+                // MUDANÇA AQUI: Limpa os filtros no sessionStorage também
+                sessionStorage.removeItem('filter_search_name');
+                sessionStorage.removeItem('filter_search_email');
+                sessionStorage.removeItem('filter_criado_de');
+                sessionStorage.removeItem('filter_criado_ate');
+                sessionStorage.removeItem('filter_atualizado_de');
+                sessionStorage.removeItem('filter_atualizado_ate');
                 updateUserTable(); // Clear modal filters and update table
                 // We don't close the modal here; the user might want to apply empty filters and stay in the modal
             });
 
-            // --- Initialization: Retrieve filters from localStorage on page load
+            // --- Initialization: Retrieve filters from sessionStorage on page load
             // and apply them to the modal fields (and consequently to the table)
             // MUDANÇA AQUI: Carrega os valores dos filtros de nome e e-mail separados na inicialização
-            modalSearchNameInput.value = localStorage.getItem('filter_search_name') || '';
-            modalSearchEmailInput.value = localStorage.getItem('filter_search_email') || '';
-            modalFilterCriadoDeInput.value = localStorage.getItem('filter_criado_de') || '';
-            modalFilterCriadoAteInput.value = localStorage.getItem('filter_criado_ate') || '';
-            modalFilterAtualizadoDeInput.value = localStorage.getItem('filter_atualizado_de') || '';
-            modalFilterAtualizadoAteInput.value = localStorage.getItem('filter_atualizado_ate') || '';
+            modalSearchNameInput.value = sessionStorage.getItem('filter_search_name') || '';
+            modalSearchEmailInput.value = sessionStorage.getItem('filter_search_email') || '';
+            modalFilterCriadoDeInput.value = sessionStorage.getItem('filter_criado_de') || '';
+            modalFilterCriadoAteInput.value = sessionStorage.getItem('filter_criado_ate') || '';
+            modalFilterAtualizadoDeInput.value = sessionStorage.getItem('filter_atualizado_de') || '';
+            modalFilterAtualizadoAteInput.value = sessionStorage.getItem('filter_atualizado_ate') || '';
 
 
             // Configure polling to continue updating the table periodically
