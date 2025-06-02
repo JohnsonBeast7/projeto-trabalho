@@ -44,4 +44,10 @@ $router->post('/cadastrar', function () {
     $controller->handle();
 });
 
+$router->set404(function () {
+    header("Location: /home", true, 302);
+    exit;
+});
+
+
 return $router;
