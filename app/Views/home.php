@@ -942,7 +942,7 @@ if ($result_usuarios_initial) {
                 const atualizadoDe = modalFilterAtualizadoDeInput.value;
                 const atualizadoAte = modalFilterAtualizadoAteInput.value;
 
-                // MUDANÇA AQUI: Armazena os valores dos filtros separados no sessionStorage
+                // Armazena os valores dos filtros separados no sessionStorage
                 sessionStorage.setItem('filter_search_name', searchName);
                 sessionStorage.setItem('filter_search_email', searchEmail);
                 sessionStorage.setItem('filter_criado_de', criadoDe);
@@ -951,7 +951,7 @@ if ($result_usuarios_initial) {
                 sessionStorage.setItem('filter_atualizado_ate', atualizadoAte);
 
                 let queryParams = [];
-                // MUDANÇA AQUI: Adiciona parâmetros de nome e e-mail separados
+                // Adiciona parâmetros de nome e e-mail separados
                 if (searchName) queryParams.push('search_name=' + encodeURIComponent(searchName));
                 if (searchEmail) queryParams.push('search_email=' + encodeURIComponent(searchEmail));
                 if (criadoDe) queryParams.push('criado_de=' + encodeURIComponent(criadoDe));
@@ -970,7 +970,7 @@ if ($result_usuarios_initial) {
                     })
                     .then(data => {
                         if (data.status === 'success' && data.data) {
-                            userTableBody.innerHTML = ''; // Clear current table body
+                            userTableBody.innerHTML = ''; 
 
                             if (data.data.length > 0) {
                                 // Populate the table with new formatted data
@@ -978,16 +978,16 @@ if ($result_usuarios_initial) {
                                     const row = userTableBody.insertRow();
                                     row.insertCell().textContent = user.nome;
                                     row.insertCell().textContent = user.email;
-                                    row.insertCell().textContent = formatDate(user.data_admissao); // Format data_admissao
-                                    row.insertCell().textContent = formatDateTime(user.criado_em); // Format criado_em
-                                    row.insertCell().textContent = formatDateTime(user.atualizado_em); // Format atualizado_em
+                                    row.insertCell().textContent = formatDate(user.data_admissao); 
+                                    row.insertCell().textContent = formatDateTime(user.criado_em); 
+                                    row.insertCell().textContent = formatDateTime(user.atualizado_em); 
                                     row.insertCell().textContent = user.situacao;
                                 });
                             } else {
-                                // Message if no active users found
+                               
                                 const row = userTableBody.insertRow();
                                 const cell = row.insertCell();
-                                cell.colSpan = 6; // Span all columns
+                                cell.colSpan = 6; 
                                 cell.style.textAlign = 'center';
                                 cell.textContent = 'Nenhum usuário ativo encontrado com os filtros aplicados.';
                             }
@@ -1001,35 +1001,33 @@ if ($result_usuarios_initial) {
                     });
             }
 
-            // --- Add Listeners to filter fields and buttons (INSIDE THE MODAL) ---
+           
             modalApplyFiltersBtn.addEventListener('click', function() {
-                updateUserTable(); // The updateUserTable function already gets modal values
-                filterModalOverlay.classList.remove('active'); // Close modal after applying filters
+                updateUserTable(); 
+                filterModalOverlay.classList.remove('active'); 
                 document.body.style.overflow = 'auto';
             });
 
             modalClearFiltersBtn.addEventListener('click', function() {
-                // MUDANÇA AQUI: Limpa os valores dos campos de nome e e-mail separados
+                //Limpa os valores dos campos de nome e e-mail separados
                 modalSearchNameInput.value = '';
                 modalSearchEmailInput.value = '';
                 modalFilterCriadoDeInput.value = '';
                 modalFilterCriadoAteInput.value = '';
                 modalFilterAtualizadoDeInput.value = '';
                 modalFilterAtualizadoAteInput.value = '';
-                // MUDANÇA AQUI: Limpa os filtros no sessionStorage também
+                //Limpa os filtros no sessionStorage também
                 sessionStorage.removeItem('filter_search_name');
                 sessionStorage.removeItem('filter_search_email');
                 sessionStorage.removeItem('filter_criado_de');
                 sessionStorage.removeItem('filter_criado_ate');
                 sessionStorage.removeItem('filter_atualizado_de');
                 sessionStorage.removeItem('filter_atualizado_ate');
-                updateUserTable(); // Clear modal filters and update table
-                // We don't close the modal here; the user might want to apply empty filters and stay in the modal
+                updateUserTable();
             });
 
-            // --- Initialization: Retrieve filters from sessionStorage on page load
-            // and apply them to the modal fields (and consequently to the table)
-            // MUDANÇA AQUI: Carrega os valores dos filtros de nome e e-mail separados na inicialização
+          
+            //Carrega os valores dos filtros de nome e e-mail separados na inicialização
             modalSearchNameInput.value = sessionStorage.getItem('filter_search_name') || '';
             modalSearchEmailInput.value = sessionStorage.getItem('filter_search_email') || '';
             modalFilterCriadoDeInput.value = sessionStorage.getItem('filter_criado_de') || '';
@@ -1038,15 +1036,14 @@ if ($result_usuarios_initial) {
             modalFilterAtualizadoAteInput.value = sessionStorage.getItem('filter_atualizado_ate') || '';
 
 
-            // Configure polling to continue updating the table periodically
-            const INTERVALO_ATUALIZACAO_MS = 5000; // 5 seconds. Adjust as needed.
+            // Atualização de dados na tabela a cada -- segundos
+            const INTERVALO_ATUALIZACAO_MS = 5000; 
 
-            // Call the update function once on page load
             updateUserTable();
 
-            // Configure periodic calls to the update function
+          
             setInterval(updateUserTable, INTERVALO_ATUALIZACAO_MS);
-            // --- End of Polling Implementation ---
+            
 
         });
     </script>
