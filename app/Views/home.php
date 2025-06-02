@@ -8,7 +8,8 @@ if (session_status() === PHP_SESSION_NONE) {
 include __DIR__ . '/../Database/Connection.php';
 
 // Chave de acesso fixa aqui.
-define('ACESS_KEY_FIXA', '72233720368547758072'); 
+$config = include __DIR__ . '/../../config/env.php';
+define('ACESS_KEY_FIXA', $config['ACESS_KEY_FIXA']);
 
 // Usuario que nao precisa da chave
 define('USUARIO_EXCECAO_LOGIN', 'superadmin'); 
