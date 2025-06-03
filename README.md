@@ -1,41 +1,53 @@
 # projeto-trabalho
 
-"O projeto a seguir foi criado com intenção única de aprendizado."
+**Este projeto foi desenvolvido com o objetivo exclusivo de aprendizado.**
 
-Em suma, o projeto é um sistema criado para mostrar uma tabela com informações de usuários sendo elas:
+O sistema consiste em uma aplicação web simples para gerenciamento de usuários, permitindo visualização, adição e modificação de registros por meio de uma interface intuitiva e segura.
 
-    - Usuário
+    - Nome de usuário
     - Email
     - Data de admissão
     - Data e hora que as informações foram adicionadas
     - Data e hora que as informações foram alteradas
 
-O sistema foi estruturado com o sistema de arquitetura de software MVC (Model-View-Controller), dividindo a lógica em model, view e controller:
+O projeto segue o padrão de arquitetura MVC (Model-View-Controller), que organiza o código em três camadas principais:
 
-    - O usuário interage com a Visão (interface gráfica).
-    - O Controlador recebe a interação do usuário.
-    - O Controlador atualiza o Modelo, se necessário.
-    - O Controlador solicita à Visão que exiba os dados atualizados.
-    - A Visão exibe os dados atualizados ao usuário. 
+    - Model: representa a lógica de dados e acesso ao banco.
+    - View: define o layout e apresentação dos dados ao usuário.
+    - Controller: faz a ponte entre o usuário e os dados.
 
-Na página principal é exibida a tabela com as informações de usuários, ligada a um banco de dados, e três botões com as seguintes funcionalidades:
+Fluxo básico:
 
-    - Cadastrar um usuário administrador para adicionar e modificar os usuários da tabela.
-    - Login com o usuário administrador cadastrado.
-    - Filtro para procurar determinada informação de usuário.
+    1. O usuário interage com a interface.
+    2. O Controller processa a ação.
+    3. Se necessário, atualiza o Model.
+    4. O Controller envia os dados atualizados de volta à View.
+    5. A View exibe os dados atualizados ao usuário. 
+
+Na página principal (/home), é exibida a tabela com as informações de usuários, ligada a um banco de dados, e três botões com as seguintes funcionalidades:
+
+    - Uma tabela de usuários (atualizada em tempo real).
+    - Um campo de filtro para busca por nome, e-mail ou status.
+    - Botões para:
+        - Cadastrar um administrador.
+        - Efetuar login como um administrador existente.
 
 O cadastro e login possuem um campo de Chave de Acesso, para não permitir que um usuário qualquer (Sem a chave de acesso) crie uma conta e acesse o "Dashboard" do sistema.
-Existe um usuário denominado "superadmin" o qual não precisa da chave de acesso para logar, somente a senha. (OBS: Esse comportamento não é seguro em um sistema utilizado profissionalmente.)
+Existe um usuário denominado "superadmin" o qual não precisa da chave de acesso para logar, somente a senha. (Nota: o comportamento de "superadmin" é apenas para fins didáticos e não é recomendado em ambientes de produção.)
 
-Ao realizar o login, o administrador é redirecionado para o Dashboard, página onde o mesmo pode adicionar novos usuários na tabela, editar as informações de usuários já existentes, e inativar algum usuário da tabela. A funcionalidade de excluir usuário não foi criada, para que os administradores tenham acesso a todas as informações cadastradas na tabela, sendo possível mudar o status de "ativo" para "inativo", para que a linha seja vista somente pelo administrador no Dashboard.
+Ao realizar o login, o administrador é redirecionado para o Dashboard, página onde o mesmo pode adicionar novos usuários na tabela, editar as informações de usuários já existentes, e inativar algum usuário da tabela. A funcionalidade de excluir usuário não foi criada, visando preservar o histórico completo das informações, garantindo integridade e rastreabilidade.
 
-A atualização da tabela é feita de forma assíncrona, por meio de AJAX (Asynchronous JavaScript and XML). Resumindo, é possível visualizar as adições e alterações da tabela sem que o usuário precise recarregar a página do navegador.
+Algumas tecnologias foram utilizadas na produção, incluindo:
+    - PHP - Construção da estrutura do sistema
+    - JavaScrip (AJAX) - Atualização da tabela de forma assíncrona, sem recarregar a página
+    - MySQL - Manipulação do banco de dados
+    - SweetAlert2 - Estilização de avisos e erros
 
-Por fim, as páginas tem um design simples e limpo, agradável visualmente. Os avisos normais do navegador, foram alterados utilizando "SweetAlert2".
+Por fim, o sistema oferece uma interface limpa, com atualizações dinâmicas que tornam a navegação fluida. Ao realizar operações (como cadastro, login ou alteração de dados), o usuário é notificado com janelas modais estilizadas, tornando a experiência mais profissional.
 
 
 
--- Todo o desenvolvimento do projeto está corretamente versionado no repositório "projeto-trabalho". --
+ **Todo o desenvolvimento do projeto está corretamente versionado no repositório "projeto-trabalho".** 
 
     
 
