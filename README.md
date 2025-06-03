@@ -47,6 +47,7 @@ Algumas tecnologias foram utilizadas na produção, incluindo:
 Por fim, o sistema oferece uma interface limpa, com atualizações dinâmicas que tornam a navegação fluida. Ao realizar operações (como cadastro, login ou alteração de dados), o usuário é notificado com janelas modais estilizadas, tornando a experiência mais profissional.
 
 **(!!! O projeto precisa do banco de dados importado para funcionar, além do .env com as credenciais corretas do mesmo. !!!)**
+
 **(!!! Após a clonar o projeto, rode "composer install" no terminal !!!)**
 
 
