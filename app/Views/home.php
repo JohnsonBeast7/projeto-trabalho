@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Conexão com o banco de dados
-include __DIR__ . '/../Database/Connection.php';
+include __DIR__ . '/../../config/database.php';
 
 // Chave de acesso fixa aqui.
 $config = include __DIR__ . '/../../config/env.php';

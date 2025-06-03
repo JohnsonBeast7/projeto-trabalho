@@ -13,7 +13,7 @@ if (!isset($_SESSION['id'])) {
     exit();
 }
 
-include __DIR__ . '/../Database/Connection.php';
+include __DIR__ . '/../../config/database.php';
 
 // --- Bloco para Requisições AJAX (POST ou GET) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" || (isset($_GET['action']) && in_array($_GET['action'], ['get_user_data', 'get_users_dashboard']))) {
