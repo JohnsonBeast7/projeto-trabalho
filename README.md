@@ -1,52 +1,41 @@
 # projeto-trabalho
-construção do projeto
+
+"O projeto a seguir foi criado com intenção única de aprendizado."
+
+Em suma, o projeto é um sistema criado para mostrar uma tabela com informações de usuários sendo elas:
+
+    -Usuário
+    -Email
+    -Data de admissão
+    -Data e hora que as informações foram adicionadas
+    -Data e hora que as informações foram alteradas
+
+O sistema foi estruturado com o sistema de arquitetura de software MVC (Model-View-Controller), dividindo a lógica em model, view e controller:
+
+    -O usuário interage com a Visão (interface gráfica).
+    -O Controlador recebe a interação do usuário.
+    -O Controlador atualiza o Modelo, se necessário.
+    -O Controlador solicita à Visão que exiba os dados atualizados.
+    -A Visão exibe os dados atualizados ao usuário. 
+
+Na página principal é exibida a tabela com as informações de usuários, ligada a um banco de dados, e três botões com as seguintes funcionalidades:
+    -Cadastrar um usuário administrador para adicionar e modificar os usuários da tabela.
+    -Login com o usuário administrador cadastrado.
+    -Filtro para procurar determinada informação de usuário.
+
+O cadastro e login possuem um campo de Chave de Acesso, para não permitir que um usuário qualquer (Sem a chave de acesso) crie uma conta e acesse o "Dashboard" do sistema.
+Existe um usuário denominado "superadmin" o qual não precisa da chave de acesso para logar, somente a senha. (OBS: Esse comportamento não é seguro em um sistema utilizado profissionalmente.)
+
+Ao realizar o login, o administrador é redirecionado para o Dashboard, página onde o mesmo pode adicionar novos usuários na tabela, editar as informações de usuários já existentes, e inativar algum usuário da tabela. A funcionalidade de excluir usuário não foi criada, para que os administradores tenham acesso a todas as informações cadastradas na tabela, sendo possível mudar o status de "ativo" para "inativo", para que a linha seja vista somente pelo administrador no Dashboard.
+
+A atualização da tabela é feita de forma assíncrona, por meio de AJAX (Asynchronous JavaScript and XML). Resumindo, é possível visualizar as adições e alterações da tabela sem que o usuário precise recarregar a página do navegador.
+
+Por fim, as páginas tem um design simples e limpo, agradável visualmente. Os avisos normais do navegador, foram alterados utilizando "SweetAlert2".
 
 
-Descrição
-Criar banco de dados relacional com a tabela users contendo os campos:
 
-    ID
-    Nome
-    E-mail
-    Situação
-    Data de admissão
-    Data e hora do cadastro
-    Data e hora da atualização
+-- Todo o desenvolvimento do projeto está corretamente versionado no repositório "projeto-trabalho". --
 
-Criar API ou endpoints em PHP para:
+    
 
-    Listar usuários
-    Adicionar novo usuário
-    Editar usuário
-    Excluir usuário (opcional)
-
-Front-end
-
-    Criar layout básico com HTML, CSS e JavaScript
-    Exibir os dados da tabela de usuários
-    Criar botão “Adicionar Usuário”
-    Criar formulário para novo usuário
-    Validar campos obrigatórios (não permitir campos vazios)
-
-Atualização Dinâmica
-
-    Utilizar AJAX para buscar e atualizar a tabela de forma assíncrona
-    Atualizar a tabela automaticamente após adição de novo usuário, sem recarregar a página
-
-Funcionalidades Adicionais
-
-    Adicionar filtros de busca para os dados da tabela (por nome, e-mail, situação, etc.)
-    Implementar feedback visual com SweetAlert2
-    Estilizar usando Bootstrap
-
-Organização do Código
-
-    Adotar estrutura baseada em arquitetura MVC
-    Manter código limpo, comentado e organizado
-
-Versionamento e Compartilhamento
-
-    Versionar o projeto usando Git
-    Subir o projeto em repositório público (GitHub, GitLab etc.)
-    Criar um arquivo README.md explicando o projeto
 
