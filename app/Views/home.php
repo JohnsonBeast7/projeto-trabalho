@@ -304,14 +304,17 @@ if ($result_usuarios_initial) {
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/assets/css/style.css">
 
+    <!-- Bootstrap apenas para responsividade -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     <title>Sistema de Usuários</title>
 </head>
 <body>
-    <header id="main-header">
+<header id="main-header">
         <img src="/assets/img/johnson_logo_transparent.png" alt="Logo"> <h1>Sistema de Usuários</h1>
         <div class="header-buttons">
             <button id="open-cadastro-modal-btn">Cadastro</button>
@@ -319,37 +322,41 @@ if ($result_usuarios_initial) {
             <button id="open-filter-modal-btn">Filtrar Usuários</button>
         </div>
     </header>
-    <main>
-        <table>
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>E-mail</th>
-                    <th>Data de admissão</th>
-                    <th>Data e hora do cadastro</th>
-                    <th>Data e hora da atualização</th>
-                    <th>Situação</th>
-                </tr>
-            </thead>
-            <tbody id="user-table-body">
-                <?php if (!empty($dados_usuarios_initial)): ?>
-                    <?php foreach ($dados_usuarios_initial as $usuario_item): ?>
-                        <tr>
-                            <td><?php echo htmlspecialchars($usuario_item['nome']); ?></td>
-                            <td><?php echo htmlspecialchars($usuario_item['email']); ?></td>
-                            <td><?php echo htmlspecialchars($usuario_item['data_admissao']); ?></td>
-                            <td><?php echo htmlspecialchars($usuario_item['criado_em']); ?></td>
-                            <td><?php echo htmlspecialchars($usuario_item['atualizado_em']); ?></td>
-                            <td><?php echo htmlspecialchars($usuario_item['situacao']); ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
+
+
+    <main class="container my-4">
+        <div class="table-responsive-md">
+            <table>
+                <thead>
                     <tr>
-                        <td colspan="6" style="text-align: center;">Nenhum usuário ativo encontrado.</td>
+                        <th>Nome</th>
+                        <th>E-mail</th>
+                        <th>Data de admissão</th>
+                        <th>Data e hora do cadastro</th>
+                        <th>Data e hora da atualização</th>
+                        <th>Situação</th>
                     </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="user-table-body">
+                    <?php if (!empty($dados_usuarios_initial)): ?>
+                        <?php foreach ($dados_usuarios_initial as $usuario_item): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($usuario_item['nome']); ?></td>
+                                <td><?php echo htmlspecialchars($usuario_item['email']); ?></td>
+                                <td><?php echo htmlspecialchars($usuario_item['data_admissao']); ?></td>
+                                <td><?php echo htmlspecialchars($usuario_item['criado_em']); ?></td>
+                                <td><?php echo htmlspecialchars($usuario_item['atualizado_em']); ?></td>
+                                <td><?php echo htmlspecialchars($usuario_item['situacao']); ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="6" style="text-align: center;">Nenhum usuário ativo encontrado.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </main>
 
     <div class="modal-overlay" id="cadastro-modal-overlay">
@@ -357,22 +364,22 @@ if ($result_usuarios_initial) {
             <button class="close-modal-btn" id="close-cadastro-modal-btn">&times;</button>
             <h2>Cadastro de Administrador</h2>
             <form id="cadastro-form" action="/cadastrar" method="POST">
-                    <label for="usuario_cadastro">Usuário</label>
-                    <input type="text" id="usuario_cadastro" name="usuario_cadastro" placeholder="Nome de usuário" maxlength="12" required>
+                <label for="usuario_cadastro">Usuário</label>
+                <input type="text" id="usuario_cadastro" name="usuario_cadastro" placeholder="Nome de usuário" maxlength="12" required>
 
-                    <label for="senha_cadastro">Senha</label>
-                    <input type="password" id="senha_cadastro" name="senha_cadastro" placeholder="Senha" minlength="8" required>
+                <label for="senha_cadastro">Senha</label>
+                <input type="password" id="senha_cadastro" name="senha_cadastro" placeholder="Senha" minlength="8" required>
 
-                    <label for="senha_confirm_cadastro">Confirmar Senha</label>
-                    <input type="password" id="senha_confirm_cadastro" name="senha_confirm_cadastro" placeholder="Repita a senha" minlength="8" required>
+                <label for="senha_confirm_cadastro">Confirmar Senha</label>
+                <input type="password" id="senha_confirm_cadastro" name="senha_confirm_cadastro" placeholder="Repita a senha" minlength="8" required>
 
-                    <label for="key_cadastro">KEY</label>
-                    <input type="text" id="key_cadastro" name="key_cadastro" placeholder="Chave de acesso" maxlength="20" required>
+                <label for="key_cadastro">KEY</label>
+                <input type="text" id="key_cadastro" name="key_cadastro" placeholder="Chave de acesso" maxlength="20" required>
 
-                    <button type="submit">Cadastrar</button>
-                </form>
+                <button type="submit">Cadastrar</button>
+            </form>
+
             <?php
-            // Mensagens de erro ou sucesso
             if (!empty($erro_cadastro) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 echo '<script>
                         Swal.fire({
@@ -393,9 +400,8 @@ if ($result_usuarios_initial) {
                         });
                       </script>';
             }
-           
             if (!empty($erro_login) && !isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                 echo '<script>
+                echo '<script>
                         Swal.fire({
                             icon: "error",
                             title: "Erro de Login!",
@@ -407,6 +413,7 @@ if ($result_usuarios_initial) {
             ?>
         </div>
     </div>
+
     <div class="modal-overlay" id="login-modal-overlay">
         <div class="modal-content">
             <button class="close-modal-btn" id="close-login-modal-btn">&times;</button>
@@ -423,7 +430,7 @@ if ($result_usuarios_initial) {
 
                 <button type="submit">Entrar</button>
             </form>
-            </div>
+        </div>
     </div>
 
     <div class="modal-overlay" id="filter-modal-overlay">
@@ -456,6 +463,7 @@ if ($result_usuarios_initial) {
             </div>
         </div>
     </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <script>

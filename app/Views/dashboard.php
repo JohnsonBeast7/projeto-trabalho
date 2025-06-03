@@ -184,15 +184,28 @@ if ($result) {
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- Responsividade -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Painel de Administração</title>
-    <link rel="stylesheet" href="/assets/css/style2.css"">
+
+    <!-- Bootstrap (somente para responsividade) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="/assets/css/style2.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 </head>
 <body>
     <header id="dashboard-header">
         <h1>Bem-vindo, <?php echo htmlspecialchars($_SESSION['usuario']); ?>!</h1>
         <div class="header-buttons">
-            <button type="button" class="header-button" id="open-add-user-modal-btn">Adicionar Novo Usuário</button>
+        <button type="button" class="header-button" id="open-add-user-modal-btn">
+            <span class="d-none d-md-inline">Adicionar Novo Usuário</span>
+            <span class="d-inline d-md-none">Adicionar</span>
+        </button>
+
             <a href="/home" class="header-button">Sair</a>
         </div>
     </header>
@@ -208,102 +221,105 @@ if ($result) {
     }
     ?>
 
-    <main>
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>Data de Admissão</th>
-                    <th>Data e hora do cadastrado</th>
-                    <th>Data e hora da atualização</th>
-                    <th>Situação</th>
-                </tr>
-            </thead>
-            <tbody id="user-table-body">
-                <?php if (!empty($nomes_cadastrados)): ?>
-                    <?php foreach ($nomes_cadastrados as $row): ?>
-                    <tr data-user-id="<?= htmlspecialchars($row['id']) ?>">
-                        <td><?= htmlspecialchars($row['id']) ?></td>
-                        <td><?= htmlspecialchars($row['nome']) ?></td>
-                        <td><?= htmlspecialchars($row['email']) ?></td>
-                        <td>
-                            <?php
-                            $data_admissao_obj = new DateTime($row['data_admissao']);
-                            // Formata para 'DD/MM/YYYY' para exibição.
-                            echo htmlspecialchars($data_admissao_obj->format('d/m/Y'));
-                            ?>
-                        </td>
-                        <td>
-                            <?php
-                            $criado_em_obj = new DateTime($row['criado_em']);
-                            echo htmlspecialchars($criado_em_obj->format('d/m/Y H:i:s'));
-                            ?>
-                        </td>
-                        <td>
-                            <?php
-                            $atualizado_em_obj = new DateTime($row['atualizado_em']);
-                            echo htmlspecialchars($atualizado_em_obj->format('d/m/Y H:i:s'));
-                            ?>
-                        </td>
-                        <td><?= htmlspecialchars($row['situacao']) ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
+    <main class="container my-4">
+        <div class="table-responsive-md">
+            <table border="1">
+                <thead>
                     <tr>
-                        <td colspan="7" style="text-align: center;">Nenhum nome cadastrado ainda.</td>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Data de Admissão</th>
+                        <th>Data e hora do cadastrado</th>
+                        <th>Data e hora da atualização</th>
+                        <th>Situação</th>
                     </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody id="user-table-body">
+                    <?php if (!empty($nomes_cadastrados)): ?>
+                        <?php foreach ($nomes_cadastrados as $row): ?>
+                        <tr data-user-id="<?= htmlspecialchars($row['id']) ?>">
+                            <td><?= htmlspecialchars($row['id']) ?></td>
+                            <td><?= htmlspecialchars($row['nome']) ?></td>
+                            <td><?= htmlspecialchars($row['email']) ?></td>
+                            <td>
+                                <?php
+                                $data_admissao_obj = new DateTime($row['data_admissao']);
+                                echo htmlspecialchars($data_admissao_obj->format('d/m/Y'));
+                                ?>
+                            </td>
+                            <td>
+                                <?php
+                                $criado_em_obj = new DateTime($row['criado_em']);
+                                echo htmlspecialchars($criado_em_obj->format('d/m/Y H:i:s'));
+                                ?>
+                            </td>
+                            <td>
+                                <?php
+                                $atualizado_em_obj = new DateTime($row['atualizado_em']);
+                                echo htmlspecialchars($atualizado_em_obj->format('d/m/Y H:i:s'));
+                                ?>
+                            </td>
+                            <td><?= htmlspecialchars($row['situacao']) ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Nenhum nome cadastrado ainda.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
     </main>
 
-    <div class="modal-overlay" id="edit-user-modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal-btn" id="close-edit-user-modal-btn">&times;</button>
-            <h2>Editar Usuário</h2>
-            <form id="edit-user-form" action="" method="POST">
-                <input type="hidden" id="edit-user-id" name="id">
+    <section>
+        <div class="modal-overlay" id="edit-user-modal-overlay">
+            <div class="modal-content">
+                <button class="close-modal-btn" id="close-edit-user-modal-btn">&times;</button>
+                <h2>Editar Usuário</h2>
+                <form id="edit-user-form" action="" method="POST">
+                    <input type="hidden" id="edit-user-id" name="id">
 
-                <label for="edit-user-nome">Nome:</label>
-                <input type="text" id="edit-user-nome" name="nome" required>
+                    <label for="edit-user-nome">Nome:</label>
+                    <input type="text" id="edit-user-nome" name="nome" placeholder="Editar Nome" required>
 
-                <label for="edit-user-email">Email:</label>
-                <input type="email" id="edit-user-email" name="email" required>
+                    <label for="edit-user-email">Email:</label>
+                    <input type="email" id="edit-user-email" name="email" placeholder="Editar Email" required>
 
-                <label for="edit-user-situacao">Situação:</label>
-                <select id="edit-user-situacao" name="situacao" required>
-                    <option value="Ativo">Ativo</option>
-                    <option value="Inativo">Inativo</option>
-                </select>
+                    <label for="edit-user-situacao">Situação:</label>
+                    <select id="edit-user-situacao" name="situacao" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
 
-                <button type="submit">Salvar Alterações</button>
-            </form>
+                    <button type="submit">Salvar Alterações</button>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <div class="modal-overlay" id="add-user-modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal-btn" id="close-add-user-modal-btn">&times;</button>
-            <h2>Adicionar Novo Usuário</h2>
-            <form id="add-user-form" action="" method="POST">
-                <label for="add-user-nome">Nome:</label>
-                <input type="text" id="add-user-nome" name="nome" placeholder="Nome Completo" required>
+        <div class="modal-overlay" id="add-user-modal-overlay">
+            <div class="modal-content">
+                <button class="close-modal-btn" id="close-add-user-modal-btn">&times;</button>
+                <h2>Adicionar Novo Usuário</h2>
+                <form id="add-user-form" action="" method="POST">
+                    <label for="add-user-nome">Nome:</label>
+                    <input type="text" id="add-user-nome" name="nome" placeholder="Nome Completo" required>
 
-                <label for="add-user-email">Email:</label>
-                <input type="email" id="add-user-email" name="email" placeholder="email@exemplo.com" required>
+                    <label for="add-user-email">Email:</label>
+                    <input type="email" id="add-user-email" name="email" placeholder="email@exemplo.com" required>
 
-                <label for="add-user-situacao">Situação:</label>
-                <select id="add-user-situacao" name="situacao" required>
-                    <option value="Ativo">Ativo</option>
-                    <option value="Inativo">Inativo</option>
-                </select>
+                    <label for="add-user-situacao">Situação:</label>
+                    <select id="add-user-situacao" name="situacao" required>
+                        <option value="Ativo">Ativo</option>
+                        <option value="Inativo">Inativo</option>
+                    </select>
 
-                <button type="submit">Adicionar Usuário</button>
-            </form>
+                    <button type="submit">Adicionar Usuário</button>
+                </form>
+            </div>
         </div>
-    </div>
+    </section>
 
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>

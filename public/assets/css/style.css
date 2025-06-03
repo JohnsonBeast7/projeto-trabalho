@@ -241,6 +241,7 @@ th {
 .modal-content input[type="email"],
 .modal-content input[type="password"],
 .modal-content input[type="date"] {
+    font-family: 'Arial', sans-serif;
     width: 96%;
     padding: 10px;
     border: 1px solid #ccc;
@@ -315,15 +316,147 @@ th {
     margin-left: 232px;
 }
 
-/* Responsividade para a modal */
-@media (max-width: 600px) {
-   
-   
+
+@media (max-width: 1500px) {
+    #main-header img {
+        display: none;
+    }
+
+    #main-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 100%;               
+        box-sizing: border-box;    
+        padding: 20px 15px;   
+            
+    }
+
+    .header-buttons {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;               
+        max-width: 300px;
+        margin-left: -250px;
+        margin-top: 5px;
+             
+    }
+    
+    .header-buttons button {
+        width: 50%;
+        font-size: 10px;
+        padding: 10px;
+    }
+
+    #main-header h1 {
+        margin-left: 0px;
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 1200px) {
+    
+
+    .header-button {
+        padding: 8px 20px;
+        font-size: 14px;
+    }
+
+    .header-buttons {
+        margin-left: -200px;
+    }
 
     
+}
+
+@media (max-width: 992px) {
+    #main-header {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+        gap: 15px;
+    }
+
+    #main-header h1 {
+        font-size: 28px;
+        width: 100%;
+    }
+
+    .header-buttons {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .header-button {
+        padding: 7px 5px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Esconde apenas a logo */
+    #main-header img {
+        display: none;
+    }
+
+    #main-header h1 {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+
+    .header-button {
+        padding: 6px 16px;
+        font-size: 12px;
+    }
+
+    table {
+        font-size: 0.85em;
+        margin: 15px 5px;
+        width: calc(100% - 10px);
+    }
+
+    th, td {
+        padding: 8px 6px;
+        
+    }
+}
+
+@media (max-width: 480px) {
+    #main-header h1 {
+        font-size: 18px;
+    }
+
+    .header-button {
+        font-size: 11px;
+        padding: 5px 12px;
+    }
+
+    table {
+        font-size: 0.75em;
+    }
+
+    th, td {
+        padding: 6px 3px;
+    }
 }
 
 
 .swal2-container {
     z-index: 99999 !important; /* Um valor bem alto para sobrescrever qualquer outro */
 }
+
+@media (max-width: 768px) {
+    #main-header h1 {
+      font-size: 20px;
+      text-align: center;
+      width: 100%;
+    }
+  
+    .header-buttons {
+      justify-content: center;
+      width: 100%;
+    }
+  }
