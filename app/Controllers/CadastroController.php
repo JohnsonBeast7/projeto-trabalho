@@ -15,7 +15,7 @@ class CadastroController {
         $senha_confirm = $_POST['senha_confirm_cadastro'] ?? '';
         $key = $_POST['key_cadastro'] ?? '';
 
-        define('ACESS_KEY_FIXA', '72233720368547758072');
+        define('ACESS_KEY_FIXA', $_ENV['ACESS_KEY_FIXA']);
 
         header('Content-Type: application/json');
 

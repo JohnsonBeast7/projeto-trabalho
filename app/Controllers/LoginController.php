@@ -23,31 +23,31 @@ class LoginController {
 
         $is_superadmin = strtolower($usuario) === 'superadmin';
 
-if (!$is_superadmin && $key_digitada !== '72233720368547758072') {
-    echo json_encode(['status' => 'error', 'message' => 'Chave de acesso incorreta.']);
-    exit;
-}
+        if (!$is_superadmin && $key_digitada !== $_ENV['ACESS_KEY_FIXA']) {
+            echo json_encode(['status' => 'error', 'message' => 'Chave de acesso incorreta.']);
+            exit;
+        }
 
 
-$sql = "SELECT * FROM login WHERE usuario = ?";
-$stmt = $mysqli->prepare($sql);
-$stmt->bind_param("s", $usuario);
-$stmt->execute();
-$result = $stmt->get_result();
+        $sql = "SELECT * FROM login WHERE usuario = ?";
+        $stmt = $mysqli->prepare($sql);
+        $stmt->bind_param("s", $usuario);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-if ($result && $result->num_rows === 1) {
-    $usuario_data = $result->fetch_assoc();
+        if ($result && $result->num_rows === 1) {
+            $usuario_data = $result->fetch_assoc();
 
-    if (!password_verify($senha, $usuario_data['senha'])) {
-        echo json_encode(['status' => 'error', 'message' => 'Usuário ou senha incorretos.']);
+        if (!password_verify($senha, $usuario_data['senha'])) {
+            echo json_encode(['status' => 'error', 'message' => 'Usuário ou senha incorretos.']);
+            exit;
+        }
+
+        $_SESSION['id'] = $usuario_data['id'];
+        $_SESSION['usuario'] = $usuario_data['usuario'];
+        echo json_encode(['status' => 'success', 'redirect' => '/dashboard']);
         exit;
     }
-
-    $_SESSION['id'] = $usuario_data['id'];
-    $_SESSION['usuario'] = $usuario_data['usuario'];
-    echo json_encode(['status' => 'success', 'redirect' => '/dashboard']);
-    exit;
-}
 
 
         $stmt->bind_param("ss", $usuario, $senha);

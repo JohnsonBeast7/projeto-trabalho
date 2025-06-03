@@ -28,7 +28,7 @@ class InserirNomeController {
         $situacao = $_POST['situacao'] ?? '';
         $key_digitada = $_POST['key'] ?? '';
 
-        if ($usuario_logado !== 'superadmin' && $key_digitada !== '72233720368547758072') {
+        if ($usuario_logado !== 'superadmin' && $key_digitada !== $_ENV['ACESS_KEY_FIXA']) {
             echo json_encode(['status' => 'error', 'message' => 'Chave de acesso incorreta.']);
             exit;
         }

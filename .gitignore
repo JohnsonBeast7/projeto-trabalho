@@ -1,0 +1,17 @@
+.env
+.env.*
+*.env
+
+
+!.env.example
+
+
+/vendor
+
+
+/storage/logs
+/var/log/*
+*.log
+
+
+/bootstrap/cache

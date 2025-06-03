@@ -8,11 +8,11 @@ if (session_status() === PHP_SESSION_NONE) {
 include __DIR__ . '/../../config/database.php';
 
 // Chave de acesso fixa aqui.
-$config = include __DIR__ . '/../../config/env.php';
-define('ACESS_KEY_FIXA', $config['ACESS_KEY_FIXA']);
+
+define('ACESS_KEY_FIXA', $_ENV['ACESS_KEY_FIXA']);
 
 // Usuario que nao precisa da chave
-define('USUARIO_EXCECAO_LOGIN', 'superadmin'); 
+define('USUARIO_EXCECAO_LOGIN', $_ENV['USUARIO_EXCECAO_LOGIN'] ?? 'superadmin');
 
 // Inicializa as variáveis de mensagem
 $erro_login = "";
