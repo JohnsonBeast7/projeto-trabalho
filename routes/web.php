@@ -34,10 +34,7 @@ $router->post('/login', function () {
     $controller->handle();
 });
 
-$router->post('/inserir_nome', function () {
-    $controller = new InserirNomeController();
-    $controller->handle();
-});
+
 
 $router->post('/cadastrar', function () {
     $controller = new CadastroController();
