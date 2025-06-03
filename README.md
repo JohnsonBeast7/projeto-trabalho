@@ -4,21 +4,22 @@
 
 Em suma, o projeto é um sistema criado para mostrar uma tabela com informações de usuários sendo elas:
 
-    -Usuário
-    -Email
-    -Data de admissão
-    -Data e hora que as informações foram adicionadas
-    -Data e hora que as informações foram alteradas
+    - Usuário
+    - Email
+    - Data de admissão
+    - Data e hora que as informações foram adicionadas
+    - Data e hora que as informações foram alteradas
 
 O sistema foi estruturado com o sistema de arquitetura de software MVC (Model-View-Controller), dividindo a lógica em model, view e controller:
 
-    -O usuário interage com a Visão (interface gráfica).
-    -O Controlador recebe a interação do usuário.
-    -O Controlador atualiza o Modelo, se necessário.
-    -O Controlador solicita à Visão que exiba os dados atualizados.
-    -A Visão exibe os dados atualizados ao usuário. 
+    - O usuário interage com a Visão (interface gráfica).
+    - O Controlador recebe a interação do usuário.
+    - O Controlador atualiza o Modelo, se necessário.
+    - O Controlador solicita à Visão que exiba os dados atualizados.
+    - A Visão exibe os dados atualizados ao usuário. 
 
 Na página principal é exibida a tabela com as informações de usuários, ligada a um banco de dados, e três botões com as seguintes funcionalidades:
+
     -Cadastrar um usuário administrador para adicionar e modificar os usuários da tabela.
     -Login com o usuário administrador cadastrado.
     -Filtro para procurar determinada informação de usuário.
