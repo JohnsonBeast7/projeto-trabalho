@@ -38,6 +38,7 @@ Existe um usuário denominado "superadmin" o qual não precisa da chave de acess
 Ao realizar o login, o administrador é redirecionado para o Dashboard, página onde o mesmo pode adicionar novos usuários na tabela, editar as informações de usuários já existentes, e inativar algum usuário da tabela. A funcionalidade de excluir usuário não foi criada, visando preservar o histórico completo das informações, garantindo integridade e rastreabilidade.
 
 Algumas tecnologias foram utilizadas na produção, incluindo:
+
     - PHP - Construção da estrutura do sistema
     - JavaScrip (AJAX) - Atualização da tabela de forma assíncrona, sem recarregar a página
     - MySQL - Manipulação do banco de dados
