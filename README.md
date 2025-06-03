@@ -20,9 +20,9 @@ O sistema foi estruturado com o sistema de arquitetura de software MVC (Model-Vi
 
 Na página principal é exibida a tabela com as informações de usuários, ligada a um banco de dados, e três botões com as seguintes funcionalidades:
 
-    -Cadastrar um usuário administrador para adicionar e modificar os usuários da tabela.
-    -Login com o usuário administrador cadastrado.
-    -Filtro para procurar determinada informação de usuário.
+    - Cadastrar um usuário administrador para adicionar e modificar os usuários da tabela.
+    - Login com o usuário administrador cadastrado.
+    - Filtro para procurar determinada informação de usuário.
 
 O cadastro e login possuem um campo de Chave de Acesso, para não permitir que um usuário qualquer (Sem a chave de acesso) crie uma conta e acesse o "Dashboard" do sistema.
 Existe um usuário denominado "superadmin" o qual não precisa da chave de acesso para logar, somente a senha. (OBS: Esse comportamento não é seguro em um sistema utilizado profissionalmente.)
